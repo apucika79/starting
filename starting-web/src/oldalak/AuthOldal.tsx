@@ -5,13 +5,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { AuthKartya } from '@/komponensek/AuthKartya';
 import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
 import {
+  authParameterekAzUrlbol,
   belepesEmailJelszoval,
   jelszoFrissitese,
   jelszoVisszaallitasKerese,
+  meghivasosRegisztracio,
   recoveryAllapotAzUrlbol,
   torliAuthVisszateroParametereket,
 } from '@/szolgaltatasok/auth';
+import { meghivoEllenorzese } from '@/szolgaltatasok/meghivok';
 import { navigalj } from '@/segedek/navigacio';
+import type { MeghivoAdat } from '@/tipusok/meghivo';
+import type { FelhasznaloiSzerepkor } from '@/tipusok/profil';
 
 export type AuthOldalMod = 'belepes' | 'regisztracio';
 
@@ -19,18 +24,24 @@ type AuthOldalTulajdonsagok = {
   mod: AuthOldalMod;
 };
 
+const szerepkorCimkek: Record<FelhasznaloiSzerepkor, string> = {
+  szuperadmin: 'Szuperadmin',
+  ceg_admin: 'Cégadmin',
+  terulet_vezeto: 'Területvezető',
+  dolgozo: 'Dolgozó',
+};
+
 const authTartalom = {
   belepes: {
     felirat: 'Belépés',
     cim: 'Üdv újra a Starting rendszerben.',
     leiras:
-      'A webes auth első működő verziója már valódi Supabase belépéssel dolgozik, és előkészíti a vállalati munkamenet-kezelést a következő iterációkhoz.',
+      'A webes auth most már valós email + jelszó belépést, elfelejtett jelszó folyamatot és védett belső oldalt kezel a Supabase Auth munkameneteivel.',
     gombSzoveg: 'Belépés',
-    labjegyzet:
-      'A következő fejlesztési szakaszban ide kerül a teljes meghíváskezelés és a részletes szerepkör alapú profilbetöltés további finomítása.',
+    labjegyzet: 'A munkamenet perzisztens, tokenfrissítéssel együtt kezelt, és a védett útvonalak automatikusan visszairányítanak belépésre.',
     alsoLinkSzoveg: 'Még nincs meghívásod?',
     alsoLinkHref: '/regisztracio',
-    alsoLinkCimke: 'Regisztráció előkészítése',
+    alsoLinkCimke: 'Meghívásos regisztráció',
     mezok: [
       {
         azonosito: 'email',
@@ -49,22 +60,30 @@ const authTartalom = {
     ],
     kiemeltPontok: [
       'Valódi email + jelszó belépés Supabase Auth kapcsolattal.',
-      'Egységes munkamenet a későbbi webes és mobilos felületek között.',
-      'Előkészített hely az elfelejtett jelszó és a meghívás-elfogadás számára.',
-      'Stabil, magyar nyelvű vállalati UI már az auth-réteghez is.',
+      'Biztonságos, perzisztens session-kezelés automatikus tokenfrissítéssel.',
+      'Elfelejtett jelszó kérés és recovery-linkes jelszócsere ugyanazon a felületen.',
+      'Védett oldalak automatikus belépési kapuval.',
     ],
   },
   regisztracio: {
     felirat: 'Meghívásos regisztráció',
-    cim: 'Új felhasználó előkészítése a Startingban.',
+    cim: 'Új felhasználó aktiválása meghívó alapján.',
     leiras:
-      'A rendszer induló terve meghívásos regisztrációval számol. Ez a felület a későbbi tokenes beléptetés és profilaktiválás vizuális alapját adja meg.',
-    gombSzoveg: 'Regisztráció hamarosan',
-    labjegyzet: 'A meghívó token ellenőrzése, a jelszó beállítása és a szerepkörhöz tartozó profiladatok validálása a következő iterációban érkezik.',
+      'A regisztráció csak érvényes meghívóval érhető el. A szerepkör és a cégkapcsolat a meghívó alapján töltődik be, így a felhasználó csak a neki szánt jogosultsággal léphet be.',
+    gombSzoveg: 'Regisztráció meghívóval',
+    labjegyzet:
+      'A meghívó token ellenőrzése és a szerepkörhöz kötött onboarding már bekötött része a folyamatnak. A profil létrehozását a Supabase trigger végzi a regisztráció után.',
     alsoLinkSzoveg: 'Már van hozzáférésed?',
     alsoLinkHref: '/belepes',
     alsoLinkCimke: 'Belépés',
     mezok: [
+      {
+        azonosito: 'teljes-nev',
+        cimke: 'Teljes név',
+        tipus: 'text' as const,
+        helyorzo: 'Minta Márton',
+        automatikusKitoltes: 'name',
+      },
       {
         azonosito: 'meghivo-email',
         cimke: 'Meghívott email cím',
@@ -85,12 +104,19 @@ const authTartalom = {
         helyorzo: 'Legalább 8 karakter',
         automatikusKitoltes: 'new-password',
       },
+      {
+        azonosito: 'uj-jelszo-megerosites',
+        cimke: 'Új jelszó újra',
+        tipus: 'password' as const,
+        helyorzo: 'Ismételd meg az új jelszót',
+        automatikusKitoltes: 'new-password',
+      },
     ],
     kiemeltPontok: [
-      'Meghívás-alapú onboarding új dolgozók és külsős szereplők számára.',
-      'Előkészített hely a vállalati egység, telephely és szerepkör azonosításához.',
-      'Bővíthető struktúra kötelező elfogadásokhoz és első belépési lépésekhez.',
-      'Azonos vizuális nyelv a landing oldal és a belső auth-folyamatok között.',
+      'Meghívó token alapján ellenőrzött regisztráció.',
+      'Szerepkörhöz kötött onboarding a meghívó rekordból.',
+      'Automatikus profil-létrehozás és meghívó elfogadás a backend oldalon.',
+      'Azonos magyar nyelvű auth élmény a belépéshez és az első aktiváláshoz.',
     ],
   },
 };
@@ -133,6 +159,7 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
   const [ertekek, setErtekek] = useState<Record<string, string>>({
     email: '',
     jelszo: '',
+    'teljes-nev': '',
     'meghivo-email': '',
     'meghivo-token': '',
     'uj-jelszo': '',
@@ -143,10 +170,21 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
   const [sikerUzenet, setSikerUzenet] = useState('');
   const [jelszoResetMod, setJelszoResetMod] = useState(false);
   const [recoveryMod, setRecoveryMod] = useState(false);
+  const [meghivo, setMeghivo] = useState<MeghivoAdat | null>(null);
 
   const tartalom = recoveryMod ? recoveryTartalom : authTartalom[mod];
 
   useEffect(() => {
+    const { email, meghivoToken } = authParameterekAzUrlbol();
+
+    if (mod === 'regisztracio') {
+      setErtekek((elozo) => ({
+        ...elozo,
+        'meghivo-email': email || elozo['meghivo-email'],
+        'meghivo-token': meghivoToken || elozo['meghivo-token'],
+      }));
+    }
+
     if (mod !== 'belepes') {
       return;
     }
@@ -187,11 +225,34 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
       ...elozo,
       [azonosito]: ertek,
     }));
+
+    if (azonosito === 'meghivo-email' || azonosito === 'meghivo-token') {
+      setMeghivo(null);
+    }
   };
 
   const visszaallitAllapotokat = () => {
     setHibaUzenet('');
     setSikerUzenet('');
+  };
+
+  const ellenorizdMeghivot = async (email: string, token: string) => {
+    const { data, error } = await meghivoEllenorzese(token, email);
+
+    if (error) {
+      setMeghivo(null);
+      setHibaUzenet(error.message);
+      return null;
+    }
+
+    if (!data) {
+      setMeghivo(null);
+      setHibaUzenet('A meghívó nem található, már fel lett használva vagy lejárt. Kérj új meghívást az adminisztrátortól.');
+      return null;
+    }
+
+    setMeghivo(data);
+    return data;
   };
 
   const kezeliKuldes = async (event: FormEvent<HTMLFormElement>) => {
@@ -235,8 +296,72 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
     }
 
     if (mod === 'regisztracio') {
-      setSikerUzenet('A meghívásos regisztráció backendje még előkészítés alatt van. A belépési folyamat viszont már beköthető és tesztelhető.');
-      return;
+      const teljesNev = ertekek['teljes-nev'].trim();
+      const email = ertekek['meghivo-email'].trim().toLowerCase();
+      const token = ertekek['meghivo-token'].trim();
+      const ujJelszo = ertekek['uj-jelszo'];
+      const ujJelszoMegerosites = ertekek['uj-jelszo-megerosites'];
+
+      if (!teljesNev) {
+        setHibaUzenet('Add meg a teljes nevedet.');
+        return;
+      }
+
+      if (!email) {
+        setHibaUzenet('Add meg a meghívott email címet.');
+        return;
+      }
+
+      if (!token) {
+        setHibaUzenet('Add meg a meghívó kódot.');
+        return;
+      }
+
+      if (ujJelszo.length < 8) {
+        setHibaUzenet('Az új jelszónak legalább 8 karakter hosszúnak kell lennie.');
+        return;
+      }
+
+      if (ujJelszo !== ujJelszoMegerosites) {
+        setHibaUzenet('A két új jelszó nem egyezik meg.');
+        return;
+      }
+
+      setBetoltes(true);
+
+      try {
+        const ervenyesMeghivo = meghivo?.email === email && meghivo.id ? meghivo : await ellenorizdMeghivot(email, token);
+
+        if (!ervenyesMeghivo) {
+          return;
+        }
+
+        const { data, error } = await meghivasosRegisztracio({
+          email,
+          jelszo: ujJelszo,
+          teljesNev,
+          meghivoToken: token,
+          meghivo: ervenyesMeghivo,
+        });
+
+        if (error) {
+          setHibaUzenet(error.message);
+          return;
+        }
+
+        if (data.session) {
+          setSikerUzenet('A regisztráció sikeres, a meghívó aktiválva lett. Betöltjük a védett fiókoldalt.');
+          window.setTimeout(() => {
+            navigalj('/fiok', { replace: true });
+          }, 1000);
+          return;
+        }
+
+        setSikerUzenet('A regisztráció sikeres. Megerősítő emailt küldtünk, utána ugyanazzal az email + jelszó párossal beléphetsz.');
+        return;
+      } finally {
+        setBetoltes(false);
+      }
     }
 
     const email = ertekek.email.trim();
@@ -319,6 +444,26 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
           onMezoValtozas={kezeliMezoValtozast}
           onSubmit={kezeliKuldes}
         />
+
+        {mod === 'regisztracio' && meghivo ? (
+          <section className="mt-8 rounded-[1.75rem] border border-starting-primer/25 bg-starting-primer/10 p-6 text-sm text-slate-200">
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-starting-primerVilagos">Ellenőrzött meghívó</p>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Cég</p>
+                <p className="mt-2 text-base font-semibold text-white">{meghivo.cegNev}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Szerepkör</p>
+                <p className="mt-2 text-base font-semibold text-white">{szerepkorCimkek[meghivo.szerepkor]}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Lejárat</p>
+                <p className="mt-2 text-base font-semibold text-white">{new Date(meghivo.lejarat).toLocaleString('hu-HU')}</p>
+              </div>
+            </div>
+          </section>
+        ) : null}
       </div>
     </main>
   );

@@ -21,10 +21,11 @@ const statuszCimkek: Record<ProfilAdat['statusz'], string> = {
   torolt: 'Törölt',
 };
 
-const teendok = [
-  'Meghívásos regisztráció véglegesítése token validációval.',
-  'Jelszó-visszaállítási visszaérkező képernyő kialakítása.',
-  'Szerepkör-alapú dashboard és modulirányítás bekötése.',
+const authKeszsegPontok = [
+  'Email + jelszó alapú belépés éles Supabase Auth folyamattal.',
+  'Meghívásos, szerepkörhöz kötött regisztráció tokenellenőrzéssel.',
+  'Elfelejtett jelszó kérés és recovery-linkes új jelszó beállítás.',
+  'Védett oldalak automatikus átirányítással és perzisztens session-kezeléssel.',
 ];
 
 type FiokOldalTulajdonsagok = {
@@ -61,7 +62,7 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
       if (!data) {
         setProfil(null);
         setAllapot('hiba');
-        setHibaUzenet('Nincs még profil rekord ehhez a felhasználóhoz. A következő lépés a meghívásos onboarding és a profil létrehozásának automatizálása.');
+        setHibaUzenet('Nincs még profil rekord ehhez a felhasználóhoz. Ellenőrizd, hogy a meghívásos regisztrációhoz szükséges adatbázis trigger telepítve lett-e.');
         return;
       }
 
@@ -89,6 +90,8 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
     [profil],
   );
 
+  const sessionLejar = session.expires_at ? new Date(session.expires_at * 1000).toLocaleString('hu-HU') : 'Automatikusan kezelt';
+
   const kezeliKilepest = async () => {
     await kilepes();
     navigalj('/belepes', { replace: true });
@@ -102,8 +105,8 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
             <p className="text-sm font-semibold uppercase tracking-[0.35em] text-starting-primerVilagos">Belső felület</p>
             <h1 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">Belépés után betöltött profil és szerepkör áttekintés.</h1>
             <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
-              A korábbi ideiglenes védett oldal helyett ez a nézet már megpróbálja beolvasni a Supabase-ben tárolt profiladatokat, és
-              megmutatja, hogy a felhasználó mely szervezeti kontextussal érkezett meg a rendszerbe.
+              Ez a nézet a védett munkamenet alapján betölti a profiladatokat, és megmutatja, hogy a felhasználó milyen szervezeti kontextussal
+              és milyen szerepkörrel érkezett meg a rendszerbe.
             </p>
           </div>
           <NavigaciosLink
@@ -152,26 +155,38 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
             </div>
           </div>
 
-          <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6">
-            <h2 className="text-lg font-semibold text-white">Következő auth feladatok</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
-              {teendok.map((teendo) => (
-                <li key={teendo}>• {teendo}</li>
-              ))}
-            </ul>
+          <div className="space-y-6">
+            <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6">
+              <h2 className="text-lg font-semibold text-white">Auth státusz</h2>
+              <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
+                {authKeszsegPontok.map((tetel) => (
+                  <li key={tetel}>• {tetel}</li>
+                ))}
+              </ul>
+            </div>
 
-            <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-7 text-slate-300">
-              <p className="font-semibold text-white">Mi változott most?</p>
-              <p className="mt-2">
-                A jelenlegi kódállapot már nem csak a munkamenet létezését ellenőrzi, hanem a dokumentált <code>profilok</code> táblából
-                próbálja felépíteni a belépés utáni felhasználói kontextust is.
+            <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6">
+              <h2 className="text-lg font-semibold text-white">Aktív munkamenet</h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Felhasználó azonosító</p>
+                  <p className="mt-3 break-all text-sm font-semibold text-white">{session.user.id}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Session lejárat</p>
+                  <p className="mt-3 text-sm font-semibold text-white">{sessionLejar}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-7 text-slate-300">
+                A kliensoldali session tárolás, a tokenfrissítés és az auth eseményfigyelés a Supabase kliensben aktív, ezért a védett útvonalak újratöltés
+                után is ellenőrzött módon működnek.
               </p>
             </div>
 
             <button
               type="button"
               onClick={kezeliKilepest}
-              className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-starting-primer px-6 py-3.5 text-base font-semibold text-white transition hover:bg-starting-primerVilagos"
+              className="inline-flex w-full items-center justify-center rounded-full bg-starting-primer px-6 py-3.5 text-base font-semibold text-white transition hover:bg-starting-primerVilagos"
             >
               Kijelentkezés
             </button>

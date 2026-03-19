@@ -39,6 +39,38 @@ as $$
   select terulet_id from public.profilok where id = auth.uid()
 $$;
 
+create or replace function public.ervenyes_meghivo_ellenorzese(meghivo_token text, meghivott_email text)
+returns table (
+  id uuid,
+  email text,
+  szerepkor public.felhasznaloi_szerepkor,
+  ceg_id uuid,
+  ceg_nev text,
+  lejarat timestamp with time zone
+)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select
+    m.id,
+    m.email,
+    m.szerepkor,
+    m.ceg_id,
+    c.nev as ceg_nev,
+    m.lejarat
+  from public.meghivok m
+  join public.cegek c on c.id = m.ceg_id
+  where lower(m.token) = lower(meghivo_token)
+    and lower(m.email) = lower(meghivott_email)
+    and m.elfogadva = false
+    and m.lejarat > now()
+  limit 1
+$$;
+
+grant execute on function public.ervenyes_meghivo_ellenorzese(text, text) to anon, authenticated;
+
 create policy "szuperadmin minden ceget lat"
 on public.cegek
 for select
