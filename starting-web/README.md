@@ -3,6 +3,18 @@
 
 React + TypeScript + Vite alapú webes felület a Starting rendszerhez.
 
+## Környezeti változók
+
+Másold a `starting-web/.env.example` fájlt `starting-web/.env` néven, majd töltsd ki a következő értékeket:
+
+```env
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+VITE_APP_DOMAIN=http://localhost:5173
+```
+
+A `.env` fájl helyi fejlesztési konfiguráció, ezért nincs verziókezelésben.
+
 ## Parancsok
 
 ```bash
