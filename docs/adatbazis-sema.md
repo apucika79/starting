@@ -48,6 +48,38 @@ A részletes SQL fájlok a `docs/supabase` mappában találhatók:
 - `docs/supabase/rls.sql`
 - `docs/supabase/seed.sql`
 
+## Táblaszintű ellenőrzőlista
+
+Az alábbi összefoglaló táblánként rögzíti a minimálisan elvárt szerkezeti elemeket. A státusz mező mindenhol vagy egy egységes `statusz` mező, vagy egy üzleti folyamatot leíró dedikált enum/bool (`allapot`, `aktiv`) formájában jelenik meg.
+
+| Tábla | Elsődleges kulcs | Időbélyegek | Kapcsolatok / foreign key | Szükséges indexek | Alapértelmezett értékek | Státusz mező | Soft delete |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `cegek` | `id` UUID | `letrehozva`, `frissitve` | nincs bejövő FK, több gyermek tábla hivatkozza | `adoszam`, `domain`, `statusz` | `id`, `statusz`, időbélyegek | `statusz` | `torolve` |
+| `telephelyek` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id → cegek.id` | `ceg_id`, `(ceg_id, nev)` unique, `statusz` | `id`, `statusz`, időbélyegek | `statusz` | `torolve` |
+| `teruletek` | `id` UUID | `letrehozva`, `frissitve` | `telephely_id → telephelyek.id`, `vezeto_profil_id → profilok.id` | `telephely_id`, `vezeto_profil_id`, `(telephely_id, nev)` unique, `statusz` | `id`, `statusz`, időbélyegek | `statusz` | `torolve` |
+| `profilok` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id`, `telephely_id`, `terulet_id` | `email` unique, `ceg_id`, `telephely_id`, `terulet_id`, `szerepkor`, `statusz` | `statusz`, időbélyegek | `statusz` | `torolve` |
+| `dolgozok` | `id` UUID | `letrehozva`, `frissitve` | `profil_id`, `ceg_id`, `telephely_id`, `terulet_id` | `profil_id` unique, `ceg_id`, `telephely_id`, `terulet_id`, `foglalkoztatasi_statusz`, `statusz` | `id`, `foglalkoztatasi_statusz`, `statusz`, időbélyegek | `statusz`, `foglalkoztatasi_statusz` | `torolve` |
+| `meghivok` | `id` UUID | `elkuldve`, `letrehozva`, `frissitve` | `ceg_id`, `telephely_id`, `terulet_id`, `kuldo_profil_id` | `token` unique, `ceg_id`, `telephely_id`, `terulet_id`, `kuldo_profil_id`, `email`, `statusz`, `lejarat` | `id`, `statusz`, `elkuldve`, `elfogadva`, időbélyegek | `statusz` | `torolve` |
+| `napi_statuszok` | `id` UUID | `letrehozva`, `frissitve` | nincs | `kod` unique, `statusz` | `id`, `aktiv`, `statusz`, időbélyegek | `statusz`, `aktiv` | nem szükséges |
+| `jelenleti_naplok` | `id` UUID | `letrehozva`, `frissitve` | `dolgozo_id`, `ceg_id`, `telephely_id`, `terulet_id`, `napi_statusz_id` | `(dolgozo_id, nap)` unique, `ceg_id`, `telephely_id`, `terulet_id`, `napi_statusz_id`, `nap`, `statusz` | `id`, `nap`, `helyadat`, `statusz`, időbélyegek | `statusz` | nem javasolt, audit okból |
+| `oktatasi_anyagok` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id`, `terulet_id` | `ceg_id`, `terulet_id`, `statusz` | `id`, `kotelezo`, `letoltheto`, `statusz`, időbélyegek | `statusz` | `torolve` |
+| `oktatasi_teljesitesek` | `id` UUID | `letrehozva`, `frissitve` | `oktatasi_anyag_id`, `profil_id`, `dolgozo_id` | `(oktatasi_anyag_id, profil_id)` unique, `oktatasi_anyag_id`, `profil_id`, `dolgozo_id`, `hatarido`, `statusz` | `id`, `megtekintve`, `elfogadva`, `teljesitesi_arany`, `statusz`, időbélyegek | `statusz` | nem javasolt, riport/audit okból |
+| `dokumentumok` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id`, `terulet_id` | `ceg_id`, `terulet_id`, `statusz` | `id`, `kotelezo`, `statusz`, időbélyegek | `statusz` | `torolve` |
+| `dolgozo_dokumentumok` | `id` UUID | `letrehozva`, `frissitve` | `dolgozo_id`, `ceg_id`, `dokumentum_id`, `feltolto_profil_id` | `dolgozo_id`, `ceg_id`, `dokumentum_id`, `feltolto_profil_id`, `statusz` | `id`, `statusz`, időbélyegek | `statusz` | `torolve` |
+| `dokumentum_elfogadasok` | `id` UUID | `letrehozva`, `frissitve` | `dokumentum_id`, `profil_id`, `dolgozo_id` | `(dokumentum_id, profil_id)` unique, `dokumentum_id`, `profil_id`, `dolgozo_id`, `allapot` | `id`, `allapot`, `elfogadva`, időbélyegek | `allapot` | nem javasolt, audit okból |
+| `esemenyek` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id`, `telephely_id`, `terulet_id`, `dolgozo_id`, `rogzito_profil_id` | `ceg_id`, `telephely_id`, `terulet_id`, `dolgozo_id`, `rogzito_profil_id`, `kategoria`, `statusz`, `esemeny_datum` | `id`, `admin_lathato`, `metaadat`, `statusz`, időbélyegek | `statusz` | `torolve` |
+| `ertesitesek` | `id` UUID | `letrehozva`, `frissitve` | `profil_id`, `ceg_id`, `terulet_id` | `profil_id`, `ceg_id`, `terulet_id`, `allapot`, `tipus`, `cel`, admin lista index | `id`, `cel`, `prioritas`, `allapot`, `olvasott`, `admin_listaban_megjelenik`, `metaadat`, `kuldes_csatorna`, `push_elokeszitve`, időbélyegek | `allapot` | `torolve` |
+| `rendszer_naplok` | `id` UUID | `letrehozva`, `frissitve` | `profil_id`, `ceg_id` | `ceg_id`, `profil_id`, `entitas`, `entitas_azonosito`, `letrehozva` | `id`, `reszletek`, időbélyegek | az esemény típusa a `muvelet`, külön statusz nem szükséges | nem javasolt, audit okból |
+
+### Soft delete irányelv
+
+Soft delete kizárólag ott szerepel, ahol üzleti vagy adminisztrációs helyreállításra ténylegesen szükség lehet:
+
+- szervezeti törzsadatok: `cegek`, `telephelyek`, `teruletek`
+- személyekhez és hozzáférésekhez kötődő adatok: `profilok`, `dolgozok`, `meghivok`
+- hosszabb életciklusú tartalmak: `oktatasi_anyagok`, `dokumentumok`, `dolgozo_dokumentumok`, `esemenyek`, `ertesitesek`
+- audit vagy tényadat táblákban (`jelenleti_naplok`, `oktatasi_teljesitesek`, `dokumentum_elfogadasok`, `rendszer_naplok`) a fizikai vagy státusz alapú lezárás előnyösebb, mert a riportok és visszakövethetőség sérülne a puha törléssel
+
 ## Főbb összehangolások a jelenlegi kódbázissal
 
 ### Szervezeti hierarchia

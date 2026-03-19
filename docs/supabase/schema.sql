@@ -39,6 +39,7 @@ create table if not exists public.telephelyek (
   statusz public.altalanos_statusz not null default 'aktiv',
   letrehozva timestamp with time zone not null default now(),
   frissitve timestamp with time zone not null default now(),
+  torolve timestamp with time zone,
   unique (ceg_id, nev)
 );
 
@@ -51,6 +52,7 @@ create table if not exists public.teruletek (
   statusz public.altalanos_statusz not null default 'aktiv',
   letrehozva timestamp with time zone not null default now(),
   frissitve timestamp with time zone not null default now(),
+  torolve timestamp with time zone,
   unique (telephely_id, nev)
 );
 
@@ -107,6 +109,8 @@ create table if not exists public.meghivok (
   elfogadva_at timestamp with time zone,
   visszavonva_at timestamp with time zone,
   letrehozva timestamp with time zone not null default now(),
+  frissitve timestamp with time zone not null default now(),
+  torolve timestamp with time zone,
   check (lejarat >= elkuldve)
 );
 
@@ -116,7 +120,9 @@ create table if not exists public.napi_statuszok (
   megnevezes text not null,
   szin text,
   aktiv boolean not null default true,
-  letrehozva timestamp with time zone not null default now()
+  statusz public.altalanos_statusz not null default 'aktiv',
+  letrehozva timestamp with time zone not null default now(),
+  frissitve timestamp with time zone not null default now()
 );
 
 create table if not exists public.jelenleti_naplok (
@@ -132,6 +138,7 @@ create table if not exists public.jelenleti_naplok (
   helyadat jsonb not null default '{}'::jsonb,
   foto_url text,
   megjegyzes text,
+  statusz public.altalanos_statusz not null default 'aktiv',
   letrehozva timestamp with time zone not null default now(),
   frissitve timestamp with time zone not null default now(),
   check (munka_vege is null or munka_vege >= munka_kezdete)
@@ -153,6 +160,7 @@ create table if not exists public.oktatasi_anyagok (
   statusz public.altalanos_statusz not null default 'aktiv',
   letrehozva timestamp with time zone not null default now(),
   frissitve timestamp with time zone not null default now(),
+  torolve timestamp with time zone,
   check (ervenyes_ig is null or ervenyes_tol is null or ervenyes_ig >= ervenyes_tol)
 );
 
@@ -167,6 +175,7 @@ create table if not exists public.oktatasi_teljesitesek (
   elfogadva boolean not null default false,
   elfogadas_ideje timestamp with time zone,
   teljesitesi_arany numeric(5,2) not null default 0,
+  statusz public.altalanos_statusz not null default 'aktiv',
   letrehozva timestamp with time zone not null default now(),
   frissitve timestamp with time zone not null default now(),
   unique (oktatasi_anyag_id, profil_id),
@@ -188,6 +197,7 @@ create table if not exists public.dokumentumok (
   statusz public.altalanos_statusz not null default 'aktiv',
   letrehozva timestamp with time zone not null default now(),
   frissitve timestamp with time zone not null default now(),
+  torolve timestamp with time zone,
   check (ervenyes_ig is null or ervenyes_tol is null or ervenyes_ig >= ervenyes_tol)
 );
 
@@ -204,7 +214,8 @@ create table if not exists public.dolgozo_dokumentumok (
   ervenyes_eddig timestamp with time zone,
   statusz public.altalanos_statusz not null default 'aktiv',
   letrehozva timestamp with time zone not null default now(),
-  frissitve timestamp with time zone not null default now()
+  frissitve timestamp with time zone not null default now(),
+  torolve timestamp with time zone
 );
 
 create table if not exists public.dokumentum_elfogadasok (
@@ -236,8 +247,10 @@ create table if not exists public.esemenyek (
   csatolmany_url text,
   admin_lathato boolean not null default true,
   metaadat jsonb not null default '{}'::jsonb,
+  statusz public.altalanos_statusz not null default 'aktiv',
   letrehozva timestamp with time zone not null default now(),
-  frissitve timestamp with time zone not null default now()
+  frissitve timestamp with time zone not null default now(),
+  torolve timestamp with time zone
 );
 
 create table if not exists public.ertesitesek (
@@ -266,6 +279,7 @@ create table if not exists public.ertesitesek (
   push_kuldve_at timestamp with time zone,
   letrehozva timestamp with time zone not null default now(),
   frissitve timestamp with time zone not null default now(),
+  torolve timestamp with time zone,
   check (profil_id is not null or cel <> 'profil')
 );
 
@@ -277,7 +291,8 @@ create table if not exists public.rendszer_naplok (
   entitas text not null,
   entitas_azonosito uuid,
   reszletek jsonb not null default '{}'::jsonb,
-  letrehozva timestamp with time zone not null default now()
+  letrehozva timestamp with time zone not null default now(),
+  frissitve timestamp with time zone not null default now()
 );
 
 alter table public.teruletek
@@ -288,28 +303,74 @@ alter table public.teruletek
 
 create unique index if not exists idx_cegek_adoszam_unique on public.cegek (adoszam) where adoszam is not null;
 create unique index if not exists idx_cegek_domain_unique on public.cegek (lower(domain)) where domain is not null;
+create index if not exists idx_cegek_statusz on public.cegek (statusz) where torolve is null;
 create index if not exists idx_telephelyek_ceg_id on public.telephelyek (ceg_id);
+create index if not exists idx_telephelyek_statusz on public.telephelyek (statusz) where torolve is null;
 create index if not exists idx_teruletek_telephely_id on public.teruletek (telephely_id);
+create index if not exists idx_teruletek_vezeto_profil_id on public.teruletek (vezeto_profil_id);
+create index if not exists idx_teruletek_statusz on public.teruletek (statusz) where torolve is null;
 create index if not exists idx_profilok_ceg_id on public.profilok (ceg_id);
+create index if not exists idx_profilok_telephely_id on public.profilok (telephely_id);
 create index if not exists idx_profilok_terulet_id on public.profilok (terulet_id);
+create index if not exists idx_profilok_szerepkor on public.profilok (szerepkor);
+create index if not exists idx_profilok_statusz on public.profilok (statusz) where torolve is null;
 create index if not exists idx_dolgozok_ceg_id on public.dolgozok (ceg_id);
+create index if not exists idx_dolgozok_telephely_id on public.dolgozok (telephely_id);
+create index if not exists idx_dolgozok_terulet_id on public.dolgozok (terulet_id);
 create index if not exists idx_dolgozok_foglalkoztatasi_statusz on public.dolgozok (foglalkoztatasi_statusz);
+create index if not exists idx_dolgozok_statusz on public.dolgozok (statusz) where torolve is null;
 create index if not exists idx_meghivok_ceg_id on public.meghivok (ceg_id);
+create index if not exists idx_meghivok_telephely_id on public.meghivok (telephely_id);
+create index if not exists idx_meghivok_terulet_id on public.meghivok (terulet_id);
+create index if not exists idx_meghivok_kuldo_profil_id on public.meghivok (kuldo_profil_id);
 create index if not exists idx_meghivok_statusz on public.meghivok (statusz);
+create index if not exists idx_meghivok_email on public.meghivok (lower(email));
+create index if not exists idx_meghivok_lejarat on public.meghivok (lejarat) where torolve is null;
+create index if not exists idx_napi_statuszok_statusz on public.napi_statuszok (statusz) where aktiv = true;
+create unique index if not exists idx_jelenleti_naplok_dolgozo_nap_unique on public.jelenleti_naplok (dolgozo_id, nap);
 create index if not exists idx_jelenleti_naplok_dolgozo_id on public.jelenleti_naplok (dolgozo_id);
+create index if not exists idx_jelenleti_naplok_ceg_id on public.jelenleti_naplok (ceg_id, nap desc);
+create index if not exists idx_jelenleti_naplok_telephely_id on public.jelenleti_naplok (telephely_id);
+create index if not exists idx_jelenleti_naplok_terulet_id on public.jelenleti_naplok (terulet_id);
+create index if not exists idx_jelenleti_naplok_napi_statusz_id on public.jelenleti_naplok (napi_statusz_id);
 create index if not exists idx_jelenleti_naplok_nap on public.jelenleti_naplok (nap desc);
+create index if not exists idx_jelenleti_naplok_statusz on public.jelenleti_naplok (statusz);
 create index if not exists idx_oktatasi_anyagok_ceg_id on public.oktatasi_anyagok (ceg_id);
+create index if not exists idx_oktatasi_anyagok_terulet_id on public.oktatasi_anyagok (terulet_id);
+create index if not exists idx_oktatasi_anyagok_statusz on public.oktatasi_anyagok (statusz) where torolve is null;
+create index if not exists idx_oktatasi_teljesitesek_oktatasi_anyag_id on public.oktatasi_teljesitesek (oktatasi_anyag_id);
 create index if not exists idx_oktatasi_teljesitesek_profil_id on public.oktatasi_teljesitesek (profil_id);
+create index if not exists idx_oktatasi_teljesitesek_dolgozo_id on public.oktatasi_teljesitesek (dolgozo_id);
+create index if not exists idx_oktatasi_teljesitesek_hatarido on public.oktatasi_teljesitesek (hatarido);
+create index if not exists idx_oktatasi_teljesitesek_statusz on public.oktatasi_teljesitesek (statusz);
 create index if not exists idx_dokumentumok_ceg_id on public.dokumentumok (ceg_id);
+create index if not exists idx_dokumentumok_terulet_id on public.dokumentumok (terulet_id);
+create index if not exists idx_dokumentumok_statusz on public.dokumentumok (statusz) where torolve is null;
 create index if not exists idx_dolgozo_dokumentumok_dolgozo_id on public.dolgozo_dokumentumok (dolgozo_id);
+create index if not exists idx_dolgozo_dokumentumok_ceg_id on public.dolgozo_dokumentumok (ceg_id);
+create index if not exists idx_dolgozo_dokumentumok_dokumentum_id on public.dolgozo_dokumentumok (dokumentum_id);
+create index if not exists idx_dolgozo_dokumentumok_feltolto_profil_id on public.dolgozo_dokumentumok (feltolto_profil_id);
+create index if not exists idx_dolgozo_dokumentumok_statusz on public.dolgozo_dokumentumok (statusz) where torolve is null;
+create index if not exists idx_dokumentum_elfogadasok_dokumentum_id on public.dokumentum_elfogadasok (dokumentum_id);
 create index if not exists idx_dokumentum_elfogadasok_profil_id on public.dokumentum_elfogadasok (profil_id);
+create index if not exists idx_dokumentum_elfogadasok_dolgozo_id on public.dokumentum_elfogadasok (dolgozo_id);
 create index if not exists idx_dokumentum_elfogadasok_allapot on public.dokumentum_elfogadasok (allapot, esedekes_datum);
 create index if not exists idx_esemenyek_ceg_id on public.esemenyek (ceg_id, esemeny_datum desc);
+create index if not exists idx_esemenyek_telephely_id on public.esemenyek (telephely_id);
+create index if not exists idx_esemenyek_terulet_id on public.esemenyek (terulet_id);
+create index if not exists idx_esemenyek_dolgozo_id on public.esemenyek (dolgozo_id);
+create index if not exists idx_esemenyek_rogzito_profil_id on public.esemenyek (rogzito_profil_id);
+create index if not exists idx_esemenyek_kategoria on public.esemenyek (kategoria);
+create index if not exists idx_esemenyek_statusz on public.esemenyek (statusz) where torolve is null;
 create index if not exists idx_ertesitesek_profil_id on public.ertesitesek (profil_id);
-create index if not exists idx_ertesitesek_allapot_letrehozva on public.ertesitesek (allapot, letrehozva desc);
-create index if not exists idx_ertesitesek_admin_lista on public.ertesitesek (admin_listaban_megjelenik, prioritas, letrehozva desc);
+create index if not exists idx_ertesitesek_ceg_id on public.ertesitesek (ceg_id);
+create index if not exists idx_ertesitesek_terulet_id on public.ertesitesek (terulet_id);
+create index if not exists idx_ertesitesek_allapot_letrehozva on public.ertesitesek (allapot, letrehozva desc) where torolve is null;
+create index if not exists idx_ertesitesek_admin_lista on public.ertesitesek (admin_listaban_megjelenik, prioritas, letrehozva desc) where torolve is null;
 create index if not exists idx_ertesitesek_tipus_cel on public.ertesitesek (tipus, cel);
 create index if not exists idx_rendszer_naplok_ceg_id on public.rendszer_naplok (ceg_id, letrehozva desc);
+create index if not exists idx_rendszer_naplok_profil_id on public.rendszer_naplok (profil_id, letrehozva desc);
+create index if not exists idx_rendszer_naplok_entitas on public.rendszer_naplok (entitas, entitas_azonosito);
 
 create or replace function public.frissitve_idobelyeg_beallitasa()
 returns trigger
@@ -440,6 +501,16 @@ create trigger trig_dolgozok_frissitve
 before update on public.dolgozok
 for each row execute function public.frissitve_idobelyeg_beallitasa();
 
+drop trigger if exists trig_meghivok_frissitve on public.meghivok;
+create trigger trig_meghivok_frissitve
+before update on public.meghivok
+for each row execute function public.frissitve_idobelyeg_beallitasa();
+
+drop trigger if exists trig_napi_statuszok_frissitve on public.napi_statuszok;
+create trigger trig_napi_statuszok_frissitve
+before update on public.napi_statuszok
+for each row execute function public.frissitve_idobelyeg_beallitasa();
+
 drop trigger if exists trig_jelenleti_naplok_frissitve on public.jelenleti_naplok;
 create trigger trig_jelenleti_naplok_frissitve
 before update on public.jelenleti_naplok
@@ -478,4 +549,9 @@ for each row execute function public.frissitve_idobelyeg_beallitasa();
 drop trigger if exists trig_ertesitesek_frissitve on public.ertesitesek;
 create trigger trig_ertesitesek_frissitve
 before update on public.ertesitesek
+for each row execute function public.frissitve_idobelyeg_beallitasa();
+
+drop trigger if exists trig_rendszer_naplok_frissitve on public.rendszer_naplok;
+create trigger trig_rendszer_naplok_frissitve
+before update on public.rendszer_naplok
 for each row execute function public.frissitve_idobelyeg_beallitasa();
