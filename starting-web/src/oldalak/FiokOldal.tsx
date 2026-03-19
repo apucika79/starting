@@ -1,19 +1,91 @@
+// Ez a fájl a belépés utáni webes fiókoldalt jeleníti meg, már profil- és szerepkör-betöltéssel.
+import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
 import { kilepes } from '@/szolgaltatasok/auth';
+import { profilBetoltese } from '@/szolgaltatasok/profil';
+import type { ProfilAdat } from '@/tipusok/profil';
+
+const szerepkorCimkek: Record<ProfilAdat['szerepkor'], string> = {
+  szuperadmin: 'Szuperadmin',
+  ceg_admin: 'Cégadmin',
+  terulet_vezeto: 'Területvezető',
+  dolgozo: 'Dolgozó',
+};
+
+const statuszCimkek: Record<ProfilAdat['statusz'], string> = {
+  aktiv: 'Aktív',
+  inaktiv: 'Inaktív',
+  torolt: 'Törölt',
+};
 
 const teendok = [
-  'Profil és szerepkör betöltése a belépés után.',
   'Meghívásos regisztráció véglegesítése token validációval.',
   'Jelszó-visszaállítási visszaérkező képernyő kialakítása.',
+  'Szerepkör-alapú dashboard és modulirányítás bekötése.',
 ];
 
 type FiokOldalTulajdonsagok = {
   session: Session;
 };
 
+type Allapot = 'betoltes' | 'siker' | 'hiba';
+
 export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
+  const [profil, setProfil] = useState<ProfilAdat | null>(null);
+  const [allapot, setAllapot] = useState<Allapot>('betoltes');
+  const [hibaUzenet, setHibaUzenet] = useState('');
+
+  useEffect(() => {
+    let aktiv = true;
+
+    const betolt = async () => {
+      setAllapot('betoltes');
+      setHibaUzenet('');
+
+      const { data, error } = await profilBetoltese(session.user.id);
+
+      if (!aktiv) {
+        return;
+      }
+
+      if (error) {
+        setProfil(null);
+        setAllapot('hiba');
+        setHibaUzenet('A profil betöltése nem sikerült. Ellenőrizd, hogy a profil rekord és az olvasási jogosultság elérhető-e a Supabase projektben.');
+        return;
+      }
+
+      if (!data) {
+        setProfil(null);
+        setAllapot('hiba');
+        setHibaUzenet('Nincs még profil rekord ehhez a felhasználóhoz. A következő lépés a meghívásos onboarding és a profil létrehozásának automatizálása.');
+        return;
+      }
+
+      setProfil(data);
+      setAllapot('siker');
+    };
+
+    void betolt();
+
+    return () => {
+      aktiv = false;
+    };
+  }, [session.user.id]);
+
   const email = session.user.email ?? 'ismeretlen felhasználó';
+  const megjelenitettNev = profil?.teljes_nev ?? session.user.user_metadata.teljes_nev ?? 'Profil előkészítés alatt';
+  const szervezetiAdatok = useMemo(
+    () => [
+      { cimke: 'Szerepkör', ertek: profil ? szerepkorCimkek[profil.szerepkor] : 'Betöltés alatt' },
+      { cimke: 'Státusz', ertek: profil ? statuszCimkek[profil.statusz] : 'Betöltés alatt' },
+      { cimke: 'Cég', ertek: profil?.ceg?.nev ?? 'Még nincs hozzárendelve' },
+      { cimke: 'Telephely', ertek: profil?.telephely?.nev ?? 'Még nincs hozzárendelve' },
+      { cimke: 'Terület', ertek: profil?.terulet?.nev ?? 'Még nincs hozzárendelve' },
+    ],
+    [profil],
+  );
 
   const kezeliKilepest = async () => {
     await kilepes();
@@ -22,14 +94,14 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
 
   return (
     <main className="min-h-screen bg-halo px-6 py-6 text-white sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-5xl rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-kartya backdrop-blur sm:p-10">
+      <div className="mx-auto max-w-6xl rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-kartya backdrop-blur sm:p-10">
         <div className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.35em] text-starting-primerVilagos">Belső felület</p>
-            <h1 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">Sikeres belépés a Starting rendszerbe.</h1>
-            <p className="mt-3 text-base leading-7 text-slate-300">
-              Ez egy ideiglenes, védett webes oldal, amely igazolja, hogy a Supabase munkamenet létrejött, és a felhasználó elérte a
-              belső felület első verzióját.
+            <h1 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">Belépés után betöltött profil és szerepkör áttekintés.</h1>
+            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
+              A korábbi ideiglenes védett oldal helyett ez a nézet már megpróbálja beolvasni a Supabase-ben tárolt profiladatokat, és
+              megmutatja, hogy a felhasználó mely szervezeti kontextussal érkezett meg a rendszerbe.
             </p>
           </div>
           <button
@@ -43,13 +115,42 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
           </button>
         </div>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[1.75rem] border border-starting-primer/20 bg-starting-primer/10 p-6">
-            <p className="text-sm text-slate-300">Bejelentkezett felhasználó</p>
-            <p className="mt-3 text-2xl font-semibold text-white">{email}</p>
-            <p className="mt-4 text-sm leading-7 text-slate-200">
-              A következő iterációban ide kerülhet a szerepkör, cég, telephely és az első belépési kötelező lépések állapota.
-            </p>
+        <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-6">
+            <div className="rounded-[1.75rem] border border-starting-primer/20 bg-starting-primer/10 p-6">
+              <p className="text-sm text-slate-300">Bejelentkezett felhasználó</p>
+              <p className="mt-3 text-2xl font-semibold text-white">{megjelenitettNev}</p>
+              <p className="mt-2 text-sm text-starting-primerVilagos">{email}</p>
+              <p className="mt-4 text-sm leading-7 text-slate-200">
+                {profil?.telefonszam
+                  ? `Kapcsolati telefonszám: ${profil.telefonszam}`
+                  : 'A profilhoz tartozó telefonszám még nincs kitöltve, de a szerkezet már készen áll a további adatbetöltéshez.'}
+              </p>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold text-white">Profil és szervezeti adatok</h2>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-slate-300">
+                  {allapot === 'betoltes' ? 'Betöltés' : allapot === 'hiba' ? 'Figyelem' : 'Szinkronban'}
+                </span>
+              </div>
+
+              {allapot === 'hiba' ? (
+                <div className="mt-5 rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4 text-sm leading-7 text-amber-100">
+                  {hibaUzenet}
+                </div>
+              ) : null}
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                {szervezetiAdatok.map((adat) => (
+                  <div key={adat.cimke} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">{adat.cimke}</p>
+                    <p className="mt-3 text-base font-semibold text-white">{adat.ertek}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6">
@@ -59,6 +160,14 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
                 <li key={teendo}>• {teendo}</li>
               ))}
             </ul>
+
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-7 text-slate-300">
+              <p className="font-semibold text-white">Mi változott most?</p>
+              <p className="mt-2">
+                A jelenlegi kódállapot már nem csak a munkamenet létezését ellenőrzi, hanem a dokumentált <code>profilok</code> táblából
+                próbálja felépíteni a belépés utáni felhasználói kontextust is.
+              </p>
+            </div>
 
             <button
               type="button"
