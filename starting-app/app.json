@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Starting",
+    "slug": "starting-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#020617"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "hu.starting.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#020617"
+      },
+      "package": "hu.starting.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "appDomain": "https://starting.hu"
+    }
+  }
+}
