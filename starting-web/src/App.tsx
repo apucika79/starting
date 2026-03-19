@@ -1,18 +1,22 @@
 // Ez a fájl a Starting webalkalmazás gyökérkomponense, és az aktuális útvonal alapján a nyilvános vagy auth-előkészítő oldalakat jeleníti meg.
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 import { AuthOldal } from '@/oldalak/AuthOldal';
 import { FiokOldal } from '@/oldalak/FiokOldal';
 import { Fooldal } from '@/oldalak/Fooldal';
 import { InformaciosOldal } from '@/oldalak/InformaciosOldal';
-import { aktualisMunkamenet } from '@/szolgaltatasok/auth';
+import { aktualisMunkamenet, recoveryAllapotAzUrlbol } from '@/szolgaltatasok/auth';
 import { supabase } from '@/szolgaltatasok/supabase';
 
 function App() {
   const [utvonal, setUtvonal] = useState(window.location.pathname);
   const [munkamenet, setMunkamenet] = useState<Session | null>(null);
   const [munkamenetBetoltve, setMunkamenetBetoltve] = useState(false);
+  const recoveryAllapot = useMemo(
+    () => (utvonal === '/belepes' ? recoveryAllapotAzUrlbol() : { aktiv: false, hibaUzenet: '' }),
+    [utvonal],
+  );
 
   useEffect(() => {
     const kezeliPopState = () => {
@@ -69,7 +73,7 @@ function App() {
   }
 
   if (utvonal === '/belepes') {
-    if (munkamenet) {
+    if (munkamenet && !recoveryAllapot.aktiv) {
       window.location.href = '/fiok';
       return null;
     }

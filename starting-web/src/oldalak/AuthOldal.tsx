@@ -1,9 +1,15 @@
 // Ez a fájl a Starting belépési és regisztrációs előkészítő oldalait jeleníti meg közös elrendezéssel.
 import type { FormEvent } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { AuthKartya } from '@/komponensek/AuthKartya';
-import { belepesEmailJelszoval, jelszoVisszaallitasKerese } from '@/szolgaltatasok/auth';
+import {
+  belepesEmailJelszoval,
+  jelszoFrissitese,
+  jelszoVisszaallitasKerese,
+  recoveryAllapotAzUrlbol,
+  torliAuthVisszateroParametereket,
+} from '@/szolgaltatasok/auth';
 
 export type AuthOldalMod = 'belepes' | 'regisztracio';
 
@@ -18,7 +24,8 @@ const authTartalom = {
     leiras:
       'A webes auth első működő verziója már valódi Supabase belépéssel dolgozik, és előkészíti a vállalati munkamenet-kezelést a következő iterációkhoz.',
     gombSzoveg: 'Belépés',
-    labjegyzet: 'A következő fejlesztési szakaszban ide kerül a teljes jelszó-visszaállítási visszatérő folyamat, a meghíváskezelés és a részletes szerepkör alapú profilbetöltés.',
+    labjegyzet:
+      'A következő fejlesztési szakaszban ide kerül a teljes meghíváskezelés és a részletes szerepkör alapú profilbetöltés további finomítása.',
     alsoLinkSzoveg: 'Még nincs meghívásod?',
     alsoLinkHref: '/regisztracio',
     alsoLinkCimke: 'Regisztráció előkészítése',
@@ -86,6 +93,40 @@ const authTartalom = {
   },
 };
 
+const recoveryTartalom = {
+  felirat: 'Jelszó-visszaállítás',
+  cim: 'Adj meg új jelszót a Starting fiókodhoz.',
+  leiras:
+    'A visszaállító linkről érkező felhasználók itt biztonságosan új jelszót állíthatnak be, majd azonnal visszatérhetnek a belső felületre.',
+  gombSzoveg: 'Új jelszó mentése',
+  labjegyzet: 'A visszaállító munkamenet csak rövid ideig érvényes. Ha a link lejárt, kérj új emailt a belépési képernyőről.',
+  alsoLinkSzoveg: 'Inkább visszalépnél?',
+  alsoLinkHref: '/belepes',
+  alsoLinkCimke: 'Belépés',
+  mezok: [
+    {
+      azonosito: 'uj-jelszo',
+      cimke: 'Új jelszó',
+      tipus: 'password' as const,
+      helyorzo: 'Legalább 8 karakter',
+      automatikusKitoltes: 'new-password',
+    },
+    {
+      azonosito: 'uj-jelszo-megerosites',
+      cimke: 'Új jelszó újra',
+      tipus: 'password' as const,
+      helyorzo: 'Ismételd meg az új jelszót',
+      automatikusKitoltes: 'new-password',
+    },
+  ],
+  kiemeltPontok: [
+    'Visszatérő recovery linkek kezelése ugyanazon az auth felületen.',
+    'Jelszófrissítés közvetlenül a Supabase helyreállító munkamenetével.',
+    'Magyar nyelvű visszajelzés lejárt vagy hibás link esetére is.',
+    'Tiszta átmenet a belépés és a védett felület között.',
+  ],
+};
+
 export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
   const [ertekek, setErtekek] = useState<Record<string, string>>({
     email: '',
@@ -93,21 +134,51 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
     'meghivo-email': '',
     'meghivo-token': '',
     'uj-jelszo': '',
+    'uj-jelszo-megerosites': '',
   });
   const [betoltes, setBetoltes] = useState(false);
   const [hibaUzenet, setHibaUzenet] = useState('');
   const [sikerUzenet, setSikerUzenet] = useState('');
   const [jelszoResetMod, setJelszoResetMod] = useState(false);
+  const [recoveryMod, setRecoveryMod] = useState(false);
 
-  const tartalom = authTartalom[mod];
+  const tartalom = recoveryMod ? recoveryTartalom : authTartalom[mod];
+
+  useEffect(() => {
+    if (mod !== 'belepes') {
+      return;
+    }
+
+    const recoveryAllapot = recoveryAllapotAzUrlbol();
+    setRecoveryMod(recoveryAllapot.aktiv);
+
+    if (recoveryAllapot.aktiv) {
+      setJelszoResetMod(false);
+      setHibaUzenet(recoveryAllapot.hibaUzenet);
+      setSikerUzenet(
+        recoveryAllapot.hibaUzenet ? '' : 'A visszaállító link érvényes. Add meg az új jelszavadat a belépés folytatásához.',
+      );
+      return;
+    }
+
+    if (recoveryAllapot.hibaUzenet) {
+      setHibaUzenet(recoveryAllapot.hibaUzenet);
+      setSikerUzenet('');
+      torliAuthVisszateroParametereket();
+    }
+  }, [mod]);
 
   const aktualisMezok = useMemo(() => {
+    if (recoveryMod) {
+      return recoveryTartalom.mezok;
+    }
+
     if (mod === 'belepes' && jelszoResetMod) {
       return [tartalom.mezok[0]];
     }
 
     return tartalom.mezok;
-  }, [jelszoResetMod, mod, tartalom.mezok]);
+  }, [jelszoResetMod, mod, recoveryMod, tartalom.mezok]);
 
   const kezeliMezoValtozast = (azonosito: string, ertek: string) => {
     setErtekek((elozo) => ({
@@ -124,6 +195,42 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
   const kezeliKuldes = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     visszaallitAllapotokat();
+
+    if (recoveryMod) {
+      const ujJelszo = ertekek['uj-jelszo'];
+      const ujJelszoMegerositese = ertekek['uj-jelszo-megerosites'];
+
+      if (ujJelszo.length < 8) {
+        setHibaUzenet('Az új jelszónak legalább 8 karakter hosszúnak kell lennie.');
+        return;
+      }
+
+      if (ujJelszo !== ujJelszoMegerositese) {
+        setHibaUzenet('A két új jelszó nem egyezik meg.');
+        return;
+      }
+
+      setBetoltes(true);
+
+      try {
+        const { error } = await jelszoFrissitese(ujJelszo);
+
+        if (error) {
+          setHibaUzenet(error.message);
+          return;
+        }
+
+        torliAuthVisszateroParametereket();
+        setSikerUzenet('Az új jelszó mentve. Néhány másodpercen belül megnyitjuk a belső felületet.');
+        setRecoveryMod(false);
+        window.setTimeout(() => {
+          window.location.href = '/fiok';
+        }, 1200);
+        return;
+      } finally {
+        setBetoltes(false);
+      }
+    }
 
     if (mod === 'regisztracio') {
       setSikerUzenet('A meghívásos regisztráció backendje még előkészítés alatt van. A belépési folyamat viszont már beköthető és tesztelhető.');
@@ -172,8 +279,9 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
     }
   };
 
-  const extraMuveletSzoveg = mod === 'belepes' ? (jelszoResetMod ? 'Mégis belépnél?' : 'Elfelejtetted a jelszavad?') : undefined;
-  const extraMuveletCimke = mod === 'belepes' ? (jelszoResetMod ? 'Vissza a belépéshez' : 'Jelszó-visszaállítás') : undefined;
+  const extraMuveletSzoveg =
+    mod === 'belepes' && !recoveryMod ? (jelszoResetMod ? 'Mégis belépnél?' : 'Elfelejtetted a jelszavad?') : undefined;
+  const extraMuveletCimke = mod === 'belepes' && !recoveryMod ? (jelszoResetMod ? 'Vissza a belépéshez' : 'Jelszó-visszaállítás') : undefined;
 
   return (
     <main className="min-h-screen bg-halo px-6 py-6 text-white sm:px-8 lg:px-10">
@@ -199,7 +307,7 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
           betoltes={betoltes}
           hibaUzenet={hibaUzenet}
           sikerUzenet={sikerUzenet}
-          gombSzoveg={mod === 'belepes' && jelszoResetMod ? 'Jelszó-visszaállító email küldése' : tartalom.gombSzoveg}
+          gombSzoveg={mod === 'belepes' && jelszoResetMod && !recoveryMod ? 'Jelszó-visszaállító email küldése' : tartalom.gombSzoveg}
           extraMuveletSzoveg={extraMuveletSzoveg}
           extraMuveletCimke={extraMuveletCimke}
           onExtraMuvelet={() => {
