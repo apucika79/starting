@@ -3,6 +3,18 @@
 
 Expo React Native + TypeScript alapú mobilalkalmazás a Starting rendszerhez.
 
+## Környezeti változók
+
+Másold a `starting-app/.env.example` fájlt `starting-app/.env` néven, majd töltsd ki a következő értékeket:
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://pelda-projekt.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=pelda-nyilvanos-kulcs
+EXPO_PUBLIC_APP_DOMAIN=starting://belepes
+```
+
+Az Expo kliensoldali környezeti változókhoz az `EXPO_PUBLIC_` előtag kötelező. A `.env` fájl helyi fejlesztési konfiguráció, ezért nincs verziókezelésben.
+
 ## Parancsok
 
 ```bash

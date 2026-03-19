@@ -3,17 +3,33 @@
 
 ## 1. Kötelező kliens oldali változók
 
+A projekt Supabase klienskapcsolatához az alábbi négy változó mindenképpen szükséges. A webes és a mobilalkalmazás külön prefixet használ, ezért ugyanazt a projektet platformonként külön kell megadni.
+
 ### Web (`starting-web/.env`)
 
-- `VITE_SUPABASE_URL=https://pelda-projekt.supabase.co`
-- `VITE_SUPABASE_ANON_KEY=pelda-nyilvanos-kulcs`
+- `VITE_SUPABASE_URL=https://pelda-projekt.supabase.co` – a webes kliens által használt Supabase projekt URL-je.
+- `VITE_SUPABASE_ANON_KEY=pelda-nyilvanos-kulcs` – a webes kliens publikus anon kulcsa.
 - `VITE_APP_DOMAIN=http://localhost:5173`
 
 ### Mobil (`starting-app/.env`)
 
-- `EXPO_PUBLIC_SUPABASE_URL=https://pelda-projekt.supabase.co`
-- `EXPO_PUBLIC_SUPABASE_ANON_KEY=pelda-nyilvanos-kulcs`
+- `EXPO_PUBLIC_SUPABASE_URL=https://pelda-projekt.supabase.co` – a mobil kliens által használt Supabase projekt URL-je.
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY=pelda-nyilvanos-kulcs` – a mobil kliens publikus anon kulcsa.
 - `EXPO_PUBLIC_APP_DOMAIN=starting://belepes`
+
+### Gyors minta helyi fejlesztéshez
+
+```env
+# starting-web/.env
+VITE_SUPABASE_URL=https://pelda-projekt.supabase.co
+VITE_SUPABASE_ANON_KEY=pelda-publishable-kulcs
+VITE_APP_DOMAIN=http://localhost:5173
+
+# starting-app/.env
+EXPO_PUBLIC_SUPABASE_URL=https://pelda-projekt.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=pelda-publishable-kulcs
+EXPO_PUBLIC_APP_DOMAIN=starting://belepes
+```
 
 ## 2. Javasolt szerver / Edge Function változók
 
