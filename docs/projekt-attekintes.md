@@ -30,3 +30,16 @@ Ez a modul a napi munkába állás egyszerű, naplózható és később bővíth
 - **napi jelenléti napló** – a napi események összesített és visszakereshető naplóban jelennek meg
 - **státusztörténet** – a rendszer megőrzi az egymást követő státuszváltásokat, így a napi jelenlét teljes folyamata nyomon követhető
 - **munkanap lezárás előkészítése** – a struktúra előkészített arra, hogy később külön munkanapzárás is rögzíthető legyen
+
+## 6. Oktatási modul
+
+Ez a modul a dolgozók kötelező és ajánlott oktatási anyagainak központi kezelését, nyomon követését és digitális visszaigazolását támogatja.
+
+- **oktatóvideók feltöltése** – a rendszer támogatja belső képzési videók feltöltését és szervezett közzétételét
+- **PDF / dokumentum feltöltése** – az oktatási anyagok között PDF-ek és egyéb kapcsolódó dokumentumok is kezelhetők
+- **kategóriák** – a tartalmak témakörök, részlegek vagy képzési típusok szerint csoportosíthatók
+- **kötelező anyagok** – megjelölhető, hogy mely oktatási elemek teljesítése szükséges az adott dolgozó vagy szerepkör számára
+- **megtekintési állapot** – a rendszer követi, hogy a dolgozó mely anyagokat nyitotta meg vagy tekintette meg
+- **elfogadási jelölés** – az anyagokhoz külön visszajelzés rögzíthető arról, hogy a dolgozó elolvasta vagy megismerte azokat
+- **digitális megerősítés** – a folyamat digitális jóváhagyással vagy megerősítő nyilatkozattal zárható le
+- **oktatási előrehaladás** – a dolgozók és adminisztrátorok számára is átlátható a képzések teljesítési állapota és előrehaladása
