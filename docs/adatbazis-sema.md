@@ -28,3 +28,25 @@
 - soft delete mezők ott, ahol üzletileg indokolt
 
 A részletes induló SQL fájlok a `docs/supabase` mappában találhatók.
+
+## Cégek kezelése
+
+A `cegek` tábla már elő van készítve a következő adatok tárolására:
+
+- `nev` – kötelező cégnév
+- `adoszam` – opcionális adószám mező, későbbi validációhoz és számlázási integrációhoz
+- `kapcsolattarto_nev` – elsődleges kapcsolattartó neve
+- `kapcsolattarto_email` – elsődleges kapcsolattartó email címe
+- `telefon` – céges vagy kapcsolattartói telefonszám
+- `cim` – székhely vagy levelezési cím
+- `statusz` – aktív / inaktív / törölt állapot
+- `logo_url` – feltöltött céges logó hivatkozása
+- `elofizetesi_csomag` – jövőbeli csomagkezeléshez fenntartott mező
+
+### Javasolt működési szabályok
+
+- a `nev` maradjon kötelező, mert ez az elsődleges azonosító az admin felületeken
+- az `adoszam` egyedi indexet kapjon, hogy ugyanaz a cég ne kerülhessen be többször eltérő néven
+- a `kapcsolattarto_email` mezőt érdemes a későbbi admin meghívási folyamathoz használni
+- a `logo_url` a `ceg-logok` storage buckethez illeszthető
+- az `elofizetesi_csomag` jelenleg szabad szövegként van előkészítve, de később enumra vagy külön előfizetés táblára bontható

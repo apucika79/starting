@@ -8,11 +8,14 @@ create table if not exists public.cegek (
   id uuid primary key default gen_random_uuid(),
   nev text not null,
   domain text,
+  adoszam text,
   kapcsolattarto_nev text,
   kapcsolattarto_email text,
   telefon text,
   cim text,
   statusz public.altalanos_statusz not null default 'aktiv',
+  logo_url text,
+  elofizetesi_csomag text,
   letrehozva timestamp with time zone not null default now(),
   frissitve timestamp with time zone not null default now(),
   torolve timestamp with time zone
@@ -190,6 +193,7 @@ create table if not exists public.rendszer_naplok (
 create index if not exists idx_telephelyek_ceg_id on public.telephelyek (ceg_id);
 create index if not exists idx_teruletek_telephely_id on public.teruletek (telephely_id);
 create index if not exists idx_profilok_ceg_id on public.profilok (ceg_id);
+create unique index if not exists idx_cegek_adoszam_unique on public.cegek (adoszam) where adoszam is not null;
 create index if not exists idx_dolgozok_ceg_id on public.dolgozok (ceg_id);
 create index if not exists idx_jelenleti_naplok_dolgozo_id on public.jelenleti_naplok (dolgozo_id);
 create index if not exists idx_ertesitesek_profil_id on public.ertesitesek (profil_id);
