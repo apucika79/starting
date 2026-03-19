@@ -12,12 +12,14 @@
 ## Aktuális állapot
 
 - email + jelszó alapú belépés működő Supabase kapcsolattal
+- meghívásos, szerepkörhöz kötött regisztráció tokenellenőrzéssel
 - jelszó-visszaállító email kérhető a belépési képernyőről
 - a recovery link visszatérése után új jelszó állítható be ugyanazon a webes auth felületen
+- a védett webes oldalak perzisztens sessionnel és automatikus átirányítással működnek
 - belépés után a webes fiókoldal megpróbálja betölteni a szerepkörhöz kötött profilt is
 
 ## Későbbi lépések
 
-- meghívó token validáció
-- munkamenet-frissítés kezelése
+- meghívó token validáció finomítása admin küldési folyamattal
 - kilépés minden kliensen
+- mobilos auth képernyők bekötése ugyanarra a meghívásos folyamatra

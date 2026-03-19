@@ -62,12 +62,12 @@ function App() {
     };
   }, []);
 
-  if (!munkamenetBetoltve && utvonal === '/fiok') {
+  if (!munkamenetBetoltve && (utvonal === '/fiok' || utvonal === '/belepes' || utvonal === '/regisztracio')) {
     return (
       <main className="min-h-screen bg-halo px-6 py-8 text-white sm:px-8 lg:px-10">
         <div className="mx-auto max-w-3xl rounded-[2rem] border border-white/10 bg-white/5 p-8 text-center shadow-kartya backdrop-blur">
           <p className="text-sm uppercase tracking-[0.35em] text-starting-primerVilagos">Munkamenet ellenőrzése</p>
-          <h1 className="mt-4 text-3xl font-semibold text-white">Betöltjük a belső felületet...</h1>
+          <h1 className="mt-4 text-3xl font-semibold text-white">Betöltjük a megfelelő felületet...</h1>
         </div>
       </main>
     );
@@ -83,6 +83,11 @@ function App() {
   }
 
   if (utvonal === '/regisztracio') {
+    if (munkamenet) {
+      navigalj('/fiok', { replace: true });
+      return null;
+    }
+
     return <AuthOldal mod="regisztracio" />;
   }
 

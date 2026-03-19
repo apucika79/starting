@@ -193,3 +193,59 @@ create index if not exists idx_profilok_ceg_id on public.profilok (ceg_id);
 create index if not exists idx_dolgozok_ceg_id on public.dolgozok (ceg_id);
 create index if not exists idx_jelenleti_naplok_dolgozo_id on public.jelenleti_naplok (dolgozo_id);
 create index if not exists idx_ertesitesek_profil_id on public.ertesitesek (profil_id);
+
+create or replace function public.profil_letrehozasa_meghivobol()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  meghivo public.meghivok%rowtype;
+  teljes_nev_ertek text;
+begin
+  select *
+  into meghivo
+  from public.meghivok
+  where lower(token) = lower(coalesce(new.raw_user_meta_data ->> 'meghivo_token', ''))
+    and lower(email) = lower(new.email)
+    and elfogadva = false
+    and lejarat > now()
+  limit 1;
+
+  if not found then
+    raise exception 'Érvénytelen vagy lejárt meghívó.';
+  end if;
+
+  teljes_nev_ertek := nullif(trim(coalesce(new.raw_user_meta_data ->> 'teljes_nev', '')), '');
+
+  insert into public.profilok (id, ceg_id, teljes_nev, email, szerepkor, statusz)
+  values (
+    new.id,
+    meghivo.ceg_id,
+    coalesce(teljes_nev_ertek, split_part(new.email, '@', 1)),
+    new.email,
+    meghivo.szerepkor,
+    'aktiv'
+  )
+  on conflict (id) do update
+  set
+    ceg_id = excluded.ceg_id,
+    teljes_nev = excluded.teljes_nev,
+    email = excluded.email,
+    szerepkor = excluded.szerepkor,
+    frissitve = now();
+
+  update public.meghivok
+  set elfogadva = true
+  where id = meghivo.id;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trig_profil_letrehozasa_meghivobol on auth.users;
+
+create trigger trig_profil_letrehozasa_meghivobol
+after insert on auth.users
+for each row execute function public.profil_letrehozasa_meghivobol();

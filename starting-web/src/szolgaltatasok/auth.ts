@@ -1,8 +1,17 @@
 import { supabase } from '@/szolgaltatasok/supabase';
+import type { MeghivoAdat } from '@/tipusok/meghivo';
 
 export type RecoveryAllapot = {
   aktiv: boolean;
   hibaUzenet: string;
+};
+
+type MeghivasosRegisztracioAdat = {
+  email: string;
+  jelszo: string;
+  teljesNev: string;
+  meghivoToken: string;
+  meghivo: MeghivoAdat;
 };
 
 function keresesiParameterekBetoltese() {
@@ -25,6 +34,15 @@ export function recoveryAllapotAzUrlbol(): RecoveryAllapot {
   };
 }
 
+export function authParameterekAzUrlbol() {
+  const { keres } = keresesiParameterekBetoltese();
+
+  return {
+    email: keres.get('email') ?? '',
+    meghivoToken: keres.get('token') ?? '',
+  };
+}
+
 export function torliAuthVisszateroParametereket() {
   const ujUrl = `${window.location.origin}${window.location.pathname}`;
   window.history.replaceState({}, document.title, ujUrl);
@@ -34,6 +52,29 @@ export async function belepesEmailJelszoval(email: string, jelszo: string) {
   return supabase.auth.signInWithPassword({
     email,
     password: jelszo,
+  });
+}
+
+export async function meghivasosRegisztracio({
+  email,
+  jelszo,
+  teljesNev,
+  meghivoToken,
+  meghivo,
+}: MeghivasosRegisztracioAdat) {
+  return supabase.auth.signUp({
+    email,
+    password: jelszo,
+    options: {
+      emailRedirectTo: `${window.location.origin}/belepes`,
+      data: {
+        teljes_nev: teljesNev,
+        meghivo_token: meghivoToken,
+        szerepkor: meghivo.szerepkor,
+        ceg_id: meghivo.cegId,
+        ceg_nev: meghivo.cegNev,
+      },
+    },
   });
 }
 
