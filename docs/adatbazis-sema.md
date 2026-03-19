@@ -1,151 +1,172 @@
 <!-- Ez a fájl a Starting induló adatbázis-struktúráját foglalja össze Supabase használathoz. -->
 # Adatbázis séma
 
-## Induló táblák
+## Kötelező alap táblák
 
-- cegek
-- telephelyek
-- teruletek
-- profilok
-- dolgozok
-- meghivok
-- jelenleti_naplok
-- napi_statuszok
-- oktatasi_anyagok
-- oktatasi_teljesitesek
-- dokumentumok
-- dolgozo_dokumentumok
-- dokumentum_elfogadasok
-- esemenyek
-- ertesitesek
-- rendszer_naplok
+Az aktuális Supabase terv tartalmazza a kért alap táblákat:
+
+- `cegek`
+- `telephelyek`
+- `teruletek`
+- `profilok`
+- `dolgozok`
+- `meghivok`
+- `jelenleti_naplok`
+- `napi_statuszok`
+- `oktatasi_anyagok`
+- `oktatasi_teljesitesek`
+- `dokumentumok`
+- `dokumentum_elfogadasok`
+- `esemenyek`
+- `ertesitesek`
+- `rendszer_naplok`
+
+## Kiegészítő, a jelenlegi kódokhoz hasznos táblák
+
+A jelenlegi üzleti folyamatok és a már dokumentált admin működés miatt a sémában szerepel még egy plusz kapcsolódó tábla is:
+
+- `dolgozo_dokumentumok` – dolgozókhoz feltöltött egyedi igazolások, mellékletek és admin dokumentumok tárolására
+
+Ez nem helyettesíti a `dokumentumok` táblát, hanem kiegészíti azt:
+
+- a `dokumentumok` a vállalati, sablon jellegű vagy kötelező dokumentumokat kezeli
+- a `dokumentum_elfogadasok` ezek elfogadását követi felhasználónként
+- a `dolgozo_dokumentumok` a konkrét dolgozóhoz tartozó egyedi feltöltéseket tárolja
 
 ## Tervezési alapelvek
 
 - UUID alapú elsődleges kulcsok
-- `created_at` és `updated_at` időbélyegek
-- szerepkör alapú hozzáférés
-- későbbi többcéges bővítés támogatása
+- egységes `letrehozva` és `frissitve` mezők ott, ahol szerkeszthető rekordokról van szó
+- szerepkör alapú hozzáférés Supabase RLS-sel
+- többcéges működés támogatása már az induló struktúrában
 - soft delete mezők ott, ahol üzletileg indokolt
+- riportokhoz, oktatási követéshez és dokumentum-elfogadásokhoz szükséges extra mezők előkészítése
 
-A részletes induló SQL fájlok a `docs/supabase` mappában találhatók.
+A részletes SQL fájlok a `docs/supabase` mappában találhatók:
 
+- `docs/supabase/schema.sql`
+- `docs/supabase/rls.sql`
+- `docs/supabase/seed.sql`
 
+## Főbb összehangolások a jelenlegi kódbázissal
 
-## Dolgozók kezelése
+### Szervezeti hierarchia
+
+A webes felület több helyen cég → telephely → terület bontásban dolgozik, ezért ez a hierarchia első osztályú része a sémának.
+
+- `cegek`
+- `telephelyek.ceg_id`
+- `teruletek.telephely_id`
+- `profilok`, `dolgozok`, `jelenleti_naplok`, `oktatasi_anyagok`, `dokumentumok`, `esemenyek`, `ertesitesek` ezekhez kapcsolhatók
+
+### Beléptetés és meghívásos regisztráció
+
+A jelenlegi auth folyamat meghívó tokennel induló regisztrációt feltételez, ezért a sémában ez külön támogatást kap.
+
+- a `meghivok` tábla tárolja a szervezeti hozzárendeléseket, szerepkört és lejáratot
+- az `ervenyes_meghivo_ellenorzese` SQL függvény ugyanazt a minimális adatcsomagot adja vissza, amit a webes kliens most is használ
+- a `profil_letrehozasa_meghivobol` trigger az `auth.users` rekord létrejöttekor automatikusan létrehozza vagy frissíti a `profilok` és `dolgozok` rekordokat
+
+### Profil és dolgozó adatok
 
 A `profilok`, `dolgozok`, `meghivok`, `dolgozo_dokumentumok` és `dokumentum_elfogadasok` együtt fedik le a dolgozói adminisztráció fő adatigényeit.
 
-### Kezelt mezők és műveletek
+#### Kezelt mezők és műveletek
 
 - **név** – a `profilok.teljes_nev` mezőben tárolva
 - **email** – a `profilok.email` mezőben, egyedi értékként
 - **telefonszám** – a `profilok.telefonszam` mezőben
-- **pozíció** – a `dolgozok.pozicio` mezőben
+- **pozíció** – a `dolgozok.pozicio` és a `meghivok.pozicio` mezőkben
 - **szerepkör** – a `profilok.szerepkor` mezőben
-- **állapot** – a `profilok.statusz` és `dolgozok.statusz` mezőkben, aktiválás / tiltás támogatásával
-- **cég** – a `profilok.ceg_id` és `dolgozok.ceg_id` kapcsolatokon keresztül
-- **telephely** – a `profilok.telephely_id` és `dolgozok.telephely_id` mezőkben
-- **terület** – a `profilok.terulet_id` és `dolgozok.terulet_id` mezőkben
+- **általános állapot** – a `profilok.statusz` és `dolgozok.statusz` mezőkben
+- **foglalkoztatási állapot** – a `dolgozok.foglalkoztatasi_statusz` mezőben, ami a riportokban is hasznos bontást ad
+- **cég / telephely / terület** – a szervezeti kapcsolatok minden fontos dolgozói rekordban külön is tárolhatók a gyorsabb szűréshez
 - **profilkép** – a `dolgozok.profilkep_url` mezőben, javasolt `profil-kepek` storage buckettel
-- **dokumentumok** – a dolgozóhoz feltöltött egyedi fájlok a `dolgozo_dokumentumok` táblában, a kötelező vállalati dokumentumok elfogadása pedig a `dokumentum_elfogadasok` táblában követhető
+- **munkaviszony dátumok** – a `dolgozok.munkaviszony_kezdete` és `munkaviszony_vege` mezőkben
 - **meghívás küldése** – a `meghivok` tábla rögzíti a kiküldött meghívás címzettjét, szerepkörét, szervezeti hozzárendeléseit és státuszát
-- **aktiválás / tiltás** – a státuszmezők használatával a dolgozó rekordja inaktiválható anélkül, hogy a történeti adatok elvesznének
 
-### Javasolt működési szabályok
+### Jelenlét és napi státuszok
 
-- dolgozó létrehozásakor a meghívó már tartalmazza a cég, telephely, terület, szerepkör és opcionális pozíció előkészített adatait
-- a meghívó állapota legyen egyértelműen követhető: függőben, elfogadva, lejárt vagy visszavonva
-- inaktivált dolgozó ne tudjon új belépést kezdeményezni, de a korábbi jelenléti, oktatási és dokumentum-elfogadási adatok maradjanak elérhetők
-- a dolgozóhoz feltöltött dokumentumoknál érdemes megkülönböztetni az admin által feltöltött belső fájlokat és a dolgozó által aláírt / feltöltött mellékleteket
-- a profilkép és dokumentum feltöltések storage szabályai szervezeti szinten legyenek szűrhetők
+A `jelenleti_naplok` és `napi_statuszok` együtt támogatják a napi munkakezdés és a riportok alapját.
 
-## Telephelyek és területek kezelése
+- a `jelenleti_naplok.nap` mező gyors napi riportolást ad
+- a `napi_statuszok` tetszőlegesen bővíthető, így a jelenlegi UI-ban is látható értékek, például *Munkában*, *Késés*, *Hiányzik* vagy *Szabadság* könnyen felvehetők
+- a `helyadat` és `foto_url` mezők előkészítik a későbbi GPS- és fotós igazolásokat
 
-A `telephelyek` és `teruletek` táblák a szervezeti felépítés alapját adják, ezért az adminfelületen érdemes a következő működést támogatni:
+### Oktatások
 
-- **telephely létrehozása és szerkesztése** – név, cím, kapcsolódó cég és státusz megadásával
-- **terület létrehozása és szerkesztése** – minden terület egy konkrét telephelyhez tartozzon
-- **dolgozók hozzárendelése** – a dolgozók egy kijelölt telephelyhez és opcionálisan területhez kapcsolhatók legyenek
-- **vezetők hozzárendelése** – a területvezetők egy vagy több területhez rendelhetők legyenek, hogy a jogosultságok pontosan szűrhetők maradjanak
-- **aktív / inaktív állapot kezelése** – telephely és terület szinten is legyen lehetőség státuszváltásra anélkül, hogy a korábbi adatok elvesznének
+Az oktatási modul a jelenlegi képernyők és riportok alapján nem csak anyaglistát, hanem teljesítési követést is igényel.
 
-### Javasolt működési szabályok
+- az `oktatasi_anyagok` tárolják a kötelező vagy ajánlott tartalmakat
+- az `oktatasi_anyagok.kategoria`, `terulet_id`, `ervenyes_tol`, `ervenyes_ig` mezők finomabb célzást és érvényességet támogatnak
+- az `oktatasi_teljesitesek` tárolják a felhasználóhoz vagy dolgozóhoz kapcsolt teljesítést
+- a `hatarido`, `megtekintve_at` és `teljesitesi_arany` mezők a jelenlegi admin riportokhoz is jobban illeszkednek
 
-- inaktiváláskor a meglévő historikus adatok maradjanak elérhetők riportálási és naplózási célból
-- új dolgozó vagy vezető csak aktív telephelyhez és aktív területhez legyen hozzárendelhető
-- terület csak a saját telephelyén belül legyen kiválasztható, hogy elkerülhető legyen a hibás kereszthozzárendelés
-- a vezetői hozzárendeléseket érdemes külön kapcsolótáblával kezelni, ha egy vezető több területért is felelhet
+### Dokumentumok
 
+A dokumentumkezelés két külön szintre bontva jelenik meg a sémában.
 
-## Események és jegyzőkönyvek kezelése
+#### 1. Vállalati dokumentumok
+
+A `dokumentumok` tábla a kötelezően elfogadandó vagy központilag kezelt dokumentumokat tárolja.
+
+- `tipus`
+- `verzio`
+- `kotelezo`
+- `ervenyes_tol`
+- `ervenyes_ig`
+
+#### 2. Elfogadási és egyedi dolgozói dokumentumok
+
+- a `dokumentum_elfogadasok` tábla követi, hogy egy adott profil elfogadta-e a dokumentumot
+- az `allapot` és `esedekes_datum` mezők a hiányzó elfogadások riportolását segítik
+- a `dolgozo_dokumentumok` tábla kezeli a dolgozóhoz feltöltött külön igazolásokat, mellékleteket és admin fájlokat
+
+### Események és jegyzőkönyvek
 
 Az `esemenyek` tábla az adminisztratív, működési és dolgozóhoz kapcsolódó bejegyzések rögzítésére szolgál.
 
-### Kezelt mezők és műveletek
-
 - **esemény rögzítése** – minden bejegyzés külön rekordként jön létre az `esemenyek` táblában
 - **rövid leírás** – a `rovid_leiras` mezőben tárolva
+- **részletes leírás** – a `reszletes_leiras` mezőben opcionálisan bővíthető
 - **kategória** – a `kategoria` mezőben, szabadon definiálható csoportosítással
 - **dátum** – az `esemeny_datum` mezőben, időbélyeggel együtt
 - **csatolmány** – a `csatolmany_url` mező hivatkozik a feltöltött fájlra
 - **kapcsolódó dolgozó** – a `dolgozo_id` mezővel kapcsolható egy konkrét dolgozóhoz
-- **kapcsolódó terület** – a `terulet_id` mezővel kapcsolható szervezeti területhez
-- **admin láthatóság** – az `admin_lathato` logikai mező szabályozza, hogy a bejegyzés csak admin körben legyen látható
+- **kapcsolódó terület / telephely** – a `terulet_id` és `telephely_id` mezőkkel kapcsolható szervezeti egységhez
+- **rögzítő profil** – a `rogzito_profil_id` mezővel auditálható, ki hozta létre a rekordot
+- **admin láthatóság** – az `admin_lathato` logikai mező szabályozza a megjelenítést
 
-### Javasolt működési szabályok
+### Értesítések
 
-- az események kategóriái legyenek egységesen kezelhetők, hogy a riportok és szűrések konzisztensen működjenek
-- az admin látható bejegyzések ne jelenjenek meg dolgozói felületen, még akkor sem, ha dolgozóhoz vannak rendelve
-- a csatolmányok storage szabályai kövessék a cég- és jogosultsági határokat
-- egy esemény opcionálisan kapcsolódhasson csak dolgozóhoz, csak területhez vagy mindkettőhöz, a működési folyamattól függően
+Az `ertesitesek` tábla a jelenlegi webes és mobilos értesítési központ alapját adja.
 
-## Cégek kezelése
+- a `tipus`, `prioritas`, `allapot` és `cel` enum mezők konzisztens kliensoldali megjelenítést támogatnak
+- az `admin_listaban_megjelenik` mező külön kezeli az admin összesítő nézetet
+- a `forras_tipus` és `forras_azonosito` segítik a visszakövethetőséget
+- a `kuldes_csatorna`, `push_elokeszitve`, `push_token`, `push_elokeszitve_at`, `push_kuldve_at` mezők előkészítik a későbbi push integrációt
 
-A `cegek` tábla már elő van készítve a következő adatok tárolására:
+### Rendszer naplók
 
-- `nev` – kötelező cégnév
-- `adoszam` – opcionális adószám mező, későbbi validációhoz és számlázási integrációhoz
-- `kapcsolattarto_nev` – elsődleges kapcsolattartó neve
-- `kapcsolattarto_email` – elsődleges kapcsolattartó email címe
-- `telefon` – céges vagy kapcsolattartói telefonszám
-- `cim` – székhely vagy levelezési cím
-- `statusz` – aktív / inaktív / törölt állapot
-- `logo_url` – feltöltött céges logó hivatkozása
-- `elofizetesi_csomag` – jövőbeli csomagkezeléshez fenntartott mező
+A `rendszer_naplok` tábla audit- és hibakeresési célokra készült.
 
-### Javasolt működési szabályok
+- `profil_id` – ki végezte a műveletet
+- `ceg_id` – melyik szervezethez tartozott az esemény
+- `muvelet` – milyen akció történt
+- `entitas` és `entitas_azonosito` – melyik objektumot érintette
+- `reszletek` – tetszőleges JSON részletek
 
-- a `nev` maradjon kötelező, mert ez az elsődleges azonosító az admin felületeken
-- az `adoszam` egyedi indexet kapjon, hogy ugyanaz a cég ne kerülhessen be többször eltérő néven
-- a `kapcsolattarto_email` mezőt érdemes a későbbi admin meghívási folyamathoz használni
-- a `logo_url` a `ceg-logok` storage buckethez illeszthető
-- az `elofizetesi_csomag` jelenleg szabad szövegként van előkészítve, de később enumra vagy külön előfizetés táblára bontható
+## RLS és működési megjegyzések
 
+A `docs/supabase/rls.sql` fájl a teljes induló struktúrára bekapcsolja a Row Level Security-t, és a következő alapelvet követi:
 
-## Értesítések alapstruktúrája
+- a szuperadmin mindent láthat
+- a cégadmin a saját cégéhez tartozó adatokat láthatja
+- a területvezető a saját területéhez kapcsolódó adatokhoz fér hozzá
+- a dolgozó legalább a saját profilját, jelenléti, oktatási és dokumentum-elfogadási adatait elérheti
 
-Az `ertesitesek` tábla most már nem csak egy egyszerű in-app üzenetlista, hanem a későbbi többcsatornás értesítési modul alapja.
+## Javasolt következő lépések
 
-### Kezelt értesítéstípusok
-
-- **rendszerüzenetek** – általános rendszer- és működési tájékoztatások
-- **kötelező oktatás figyelmeztetés** – új vagy lejáratközeli kötelező anyagokhoz kapcsolódó emlékeztetők
-- **hiányzó napi belépés figyelmeztetés** – munkakezdési napló hiánya esetén küldhető sürgős jelzés
-- **admin értesítési lista alap** – admin követési listába emelhető tételek egységes tárolása
-- **push értesítés későbbi helye** – előkészített push mezők a későbbi mobilküldéshez
-
-### Javasolt működési szabályok
-
-- a `tipus`, `prioritas`, `allapot` és `cel` enum mezők segítsék a konzisztens lekérdezést és a stabil kliensoldali megjelenítést
-- a `profil_id` maradjon opcionális azoknál az admin vagy szerepkör alapú értesítéseknél, amelyek még nem egyetlen felhasználóhoz kötődnek
-- az `admin_listaban_megjelenik` mező különítse el az admin összesítő nézetet a dolgozói in-app listától
-- a `forras_tipus` és `forras_azonosito` mezők tegyék visszakövethetővé, hogy egy figyelmeztetés oktatásból, jelenlétből vagy rendszereseményből származik-e
-- a `metaadat` JSON mezőben lehessen később határidőt, badge számot, küldési szabályt vagy extra kliensoldali navigációs információt tárolni
-- a `push_elokeszitve`, `push_token`, `push_elokeszitve_at` és `push_kuldve_at` mezők most még csak előkészítik a mobil push logikát, de később új tábla nélkül is ráépíthető rá az ütemezett küldés
-
-### Hatékonysági megfontolások
-
-- külön indexek készüljenek az állapot + létrehozási idő szerinti lekérdezésekhez, mert az olvasatlan és legfrissebb lista ezeket gyakran használja
-- az admin lista saját indexet kapjon, hogy a napi admin összesítő nézet nagyobb adatmennyiségnél is gyors maradjon
-- a típus + cél kombináció indexelése segíti az olyan háttérfolyamatokat, amelyek például csak a hiányzó napi belépés figyelmeztetéseket vagy csak az admin célcsoportú elemeket gyűjtik ki
+- a `schema.sql` és `rls.sql` fájlokat futtasd le a Supabase projektben migrációként
+- a seed adatokat csak fejlesztői vagy demo környezetben használd
+- ha a riportok később éles adatforrásra váltanak, érdemes külön SQL view-kat is létrehozni a dolgozói, oktatási és hiányzó elfogadási listákhoz
