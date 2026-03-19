@@ -1,204 +1,94 @@
 <!-- Ez a fájl a Starting induló adatbázis-struktúráját foglalja össze Supabase használathoz. -->
 # Adatbázis séma
 
-## Kötelező alap táblák
+## Áttekintés
 
-Az aktuális Supabase terv tartalmazza a kért alap táblákat:
+A `docs/supabase/schema.sql` egy induló, többcéges Supabase adatmodellt ad a Starting számára. A séma közös alapot biztosít a webes és mobil klienshez, a riportokhoz, a meghívásos auth flow-hoz és a storage-alapú fájlkezeléshez.
 
+## Fő modulok
+
+### 1. Szervezeti törzsadatok
 - `cegek`
 - `telephelyek`
 - `teruletek`
 - `profilok`
 - `dolgozok`
 - `meghivok`
-- `jelenleti_naplok`
+
+### 2. Operatív modulok
 - `napi_statuszok`
+- `jelenleti_naplok`
 - `oktatasi_anyagok`
 - `oktatasi_teljesitesek`
 - `dokumentumok`
+- `dolgozo_dokumentumok`
 - `dokumentum_elfogadasok`
 - `esemenyek`
 - `ertesitesek`
 - `rendszer_naplok`
 
-## Kiegészítő, a jelenlegi kódokhoz hasznos táblák
+## Kiemelt tervezési döntések
 
-A jelenlegi üzleti folyamatok és a már dokumentált admin működés miatt a sémában szerepel még egy plusz kapcsolódó tábla is:
+- **UUID minden elsődleges kulcshoz** a kliensoldali és többkörnyezetes seedelés megkönnyítésére.
+- **Enumok** a szerepkörökhöz, értesítésekhez, státuszokhoz és elfogadási állapotokhoz.
+- **`letrehozva` / `frissitve` mezők** minden érdemi szerkeszthető táblán.
+- **Soft delete** csak ott, ahol admin helyreállítás üzletileg releváns.
+- **RLS-kompatibilis oszlopszerkezet**: a legtöbb táblában jelen van a `ceg_id`, gyakran a `terulet_id` és `profil_id` / `dolgozo_id` is.
+- **Trigger alapú auth profil-szinkron** a meghívásos onboardinghoz.
 
-- `dolgozo_dokumentumok` – dolgozókhoz feltöltött egyedi igazolások, mellékletek és admin dokumentumok tárolására
+## Kapcsolati logika röviden
 
-Ez nem helyettesíti a `dokumentumok` táblát, hanem kiegészíti azt:
+- Egy `ceg` több `telephely`-et tartalmaz.
+- Egy `telephely` több `terulet`-et tartalmaz.
+- Egy `profil` egy Supabase auth userhez tartozik.
+- Egy `dolgozo` egy `profil` operatív megfelelője.
+- Egy `meghivo` előkészíti a majdani `profil` / `dolgozo` rekordot.
+- A jelenlét, oktatás, dokumentum-elfogadás és értesítés mind a profil / dolgozó és szervezeti hierarchia köré épül.
 
-- a `dokumentumok` a vállalati, sablon jellegű vagy kötelező dokumentumokat kezeli
-- a `dokumentum_elfogadasok` ezek elfogadását követi felhasználónként
-- a `dolgozo_dokumentumok` a konkrét dolgozóhoz tartozó egyedi feltöltéseket tárolja
+## Auth-hoz kapcsolódó SQL elemek
 
-## Tervezési alapelvek
+A séma nem csak táblákat, hanem auth-flow-t segítő SQL objektumokat is tartalmaz:
 
-- UUID alapú elsődleges kulcsok
-- egységes `letrehozva` és `frissitve` mezők ott, ahol szerkeszthető rekordokról van szó
-- szerepkör alapú hozzáférés Supabase RLS-sel
-- többcéges működés támogatása már az induló struktúrában
-- soft delete mezők ott, ahol üzletileg indokolt
-- riportokhoz, oktatási követéshez és dokumentum-elfogadásokhoz szükséges extra mezők előkészítése
+- `ervenyes_meghivo_ellenorzese(...)` RPC a kliensoldali tokenellenőrzéshez.
+- `profil_letrehozasa_meghivobol()` triggerfüggvény az `auth.users` eseményre.
+- `frissitesi_idobelyeg_beallitasa()` közös triggerfüggvény a `frissitve` mezőkhöz.
 
-A részletes SQL fájlok a `docs/supabase` mappában találhatók:
+## Indexelési stratégia
 
-- `docs/supabase/schema.sql`
-- `docs/supabase/rls.sql`
-- `docs/supabase/seed.sql`
+A séma külön indexeli azokat a mezőket, amelyeket a UI és a riportok várhatóan sokat szűrnek:
 
-## Táblaszintű ellenőrzőlista
+- szervezeti horgonyok: `ceg_id`, `telephely_id`, `terulet_id`,
+- auth és admin mezők: `email`, `szerepkor`, `token`,
+- riport mezők: `nap`, `hatarido`, `allapot`, `prioritas`,
+- audit mezők: `entitas`, `entitas_azonosito`, `esemeny_datum`.
 
-Az alábbi összefoglaló táblánként rögzíti a minimálisan elvárt szerkezeti elemeket. A státusz mező mindenhol vagy egy egységes `statusz` mező, vagy egy üzleti folyamatot leíró dedikált enum/bool (`allapot`, `aktiv`) formájában jelenik meg.
+## Fejlesztői seed lefedettség
 
-| Tábla | Elsődleges kulcs | Időbélyegek | Kapcsolatok / foreign key | Szükséges indexek | Alapértelmezett értékek | Státusz mező | Soft delete |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `cegek` | `id` UUID | `letrehozva`, `frissitve` | nincs bejövő FK, több gyermek tábla hivatkozza | `adoszam`, `domain`, `statusz` | `id`, `statusz`, időbélyegek | `statusz` | `torolve` |
-| `telephelyek` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id → cegek.id` | `ceg_id`, `(ceg_id, nev)` unique, `statusz` | `id`, `statusz`, időbélyegek | `statusz` | `torolve` |
-| `teruletek` | `id` UUID | `letrehozva`, `frissitve` | `telephely_id → telephelyek.id`, `vezeto_profil_id → profilok.id` | `telephely_id`, `vezeto_profil_id`, `(telephely_id, nev)` unique, `statusz` | `id`, `statusz`, időbélyegek | `statusz` | `torolve` |
-| `profilok` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id`, `telephely_id`, `terulet_id` | `email` unique, `ceg_id`, `telephely_id`, `terulet_id`, `szerepkor`, `statusz` | `statusz`, időbélyegek | `statusz` | `torolve` |
-| `dolgozok` | `id` UUID | `letrehozva`, `frissitve` | `profil_id`, `ceg_id`, `telephely_id`, `terulet_id` | `profil_id` unique, `ceg_id`, `telephely_id`, `terulet_id`, `foglalkoztatasi_statusz`, `statusz` | `id`, `foglalkoztatasi_statusz`, `statusz`, időbélyegek | `statusz`, `foglalkoztatasi_statusz` | `torolve` |
-| `meghivok` | `id` UUID | `elkuldve`, `letrehozva`, `frissitve` | `ceg_id`, `telephely_id`, `terulet_id`, `kuldo_profil_id` | `token` unique, `ceg_id`, `telephely_id`, `terulet_id`, `kuldo_profil_id`, `email`, `statusz`, `lejarat` | `id`, `statusz`, `elkuldve`, `elfogadva`, időbélyegek | `statusz` | `torolve` |
-| `napi_statuszok` | `id` UUID | `letrehozva`, `frissitve` | nincs | `kod` unique, `statusz` | `id`, `aktiv`, `statusz`, időbélyegek | `statusz`, `aktiv` | nem szükséges |
-| `jelenleti_naplok` | `id` UUID | `letrehozva`, `frissitve` | `dolgozo_id`, `ceg_id`, `telephely_id`, `terulet_id`, `napi_statusz_id` | `(dolgozo_id, nap)` unique, `ceg_id`, `telephely_id`, `terulet_id`, `napi_statusz_id`, `nap`, `statusz` | `id`, `nap`, `helyadat`, `statusz`, időbélyegek | `statusz` | nem javasolt, audit okból |
-| `oktatasi_anyagok` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id`, `terulet_id` | `ceg_id`, `terulet_id`, `statusz` | `id`, `kotelezo`, `letoltheto`, `statusz`, időbélyegek | `statusz` | `torolve` |
-| `oktatasi_teljesitesek` | `id` UUID | `letrehozva`, `frissitve` | `oktatasi_anyag_id`, `profil_id`, `dolgozo_id` | `(oktatasi_anyag_id, profil_id)` unique, `oktatasi_anyag_id`, `profil_id`, `dolgozo_id`, `hatarido`, `statusz` | `id`, `megtekintve`, `elfogadva`, `teljesitesi_arany`, `statusz`, időbélyegek | `statusz` | nem javasolt, riport/audit okból |
-| `dokumentumok` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id`, `terulet_id` | `ceg_id`, `terulet_id`, `statusz` | `id`, `kotelezo`, `statusz`, időbélyegek | `statusz` | `torolve` |
-| `dolgozo_dokumentumok` | `id` UUID | `letrehozva`, `frissitve` | `dolgozo_id`, `ceg_id`, `dokumentum_id`, `feltolto_profil_id` | `dolgozo_id`, `ceg_id`, `dokumentum_id`, `feltolto_profil_id`, `statusz` | `id`, `statusz`, időbélyegek | `statusz` | `torolve` |
-| `dokumentum_elfogadasok` | `id` UUID | `letrehozva`, `frissitve` | `dokumentum_id`, `profil_id`, `dolgozo_id` | `(dokumentum_id, profil_id)` unique, `dokumentum_id`, `profil_id`, `dolgozo_id`, `allapot` | `id`, `allapot`, `elfogadva`, időbélyegek | `allapot` | nem javasolt, audit okból |
-| `esemenyek` | `id` UUID | `letrehozva`, `frissitve` | `ceg_id`, `telephely_id`, `terulet_id`, `dolgozo_id`, `rogzito_profil_id` | `ceg_id`, `telephely_id`, `terulet_id`, `dolgozo_id`, `rogzito_profil_id`, `kategoria`, `statusz`, `esemeny_datum` | `id`, `admin_lathato`, `metaadat`, `statusz`, időbélyegek | `statusz` | `torolve` |
-| `ertesitesek` | `id` UUID | `letrehozva`, `frissitve` | `profil_id`, `ceg_id`, `terulet_id` | `profil_id`, `ceg_id`, `terulet_id`, `allapot`, `tipus`, `cel`, admin lista index | `id`, `cel`, `prioritas`, `allapot`, `olvasott`, `admin_listaban_megjelenik`, `metaadat`, `kuldes_csatorna`, `push_elokeszitve`, időbélyegek | `allapot` | `torolve` |
-| `rendszer_naplok` | `id` UUID | `letrehozva`, `frissitve` | `profil_id`, `ceg_id` | `ceg_id`, `profil_id`, `entitas`, `entitas_azonosito`, `letrehozva` | `id`, `reszletek`, időbélyegek | az esemény típusa a `muvelet`, külön statusz nem szükséges | nem javasolt, audit okból |
+A `docs/supabase/seed.sql` minden fő modulhoz tartalmaz mintát:
 
-### Soft delete irányelv
+- 2 cég,
+- több telephely és terület,
+- admin, vezető és dolgozó profilok,
+- függő meghívók,
+- jelenléti rekordok,
+- oktatási és dokumentum elfogadási példák,
+- értesítések és rendszer naplók.
 
-Soft delete kizárólag ott szerepel, ahol üzleti vagy adminisztrációs helyreállításra ténylegesen szükség lehet:
+## Fájlok
 
-- szervezeti törzsadatok: `cegek`, `telephelyek`, `teruletek`
-- személyekhez és hozzáférésekhez kötődő adatok: `profilok`, `dolgozok`, `meghivok`
-- hosszabb életciklusú tartalmak: `oktatasi_anyagok`, `dokumentumok`, `dolgozo_dokumentumok`, `esemenyek`, `ertesitesek`
-- audit vagy tényadat táblákban (`jelenleti_naplok`, `oktatasi_teljesitesek`, `dokumentum_elfogadasok`, `rendszer_naplok`) a fizikai vagy státusz alapú lezárás előnyösebb, mert a riportok és visszakövethetőség sérülne a puha törléssel
+- `docs/supabase/schema.sql` – séma, indexek, triggerek, RPC.
+- `docs/supabase/rls.sql` – helper függvények és policy-k.
+- `docs/supabase/seed.sql` – fejlesztői mintaadatok.
+- `docs/storage-bucket-javaslatok.md` – storage struktúra.
+- `docs/auth-flow-terv.md` – auth működési terv.
+- `docs/kornyezeti-valtozok.md` – környezeti változók listája.
 
-## Főbb összehangolások a jelenlegi kódbázissal
+## Javasolt bevezetési sorrend
 
-### Szervezeti hierarchia
-
-A webes felület több helyen cég → telephely → terület bontásban dolgozik, ezért ez a hierarchia első osztályú része a sémának.
-
-- `cegek`
-- `telephelyek.ceg_id`
-- `teruletek.telephely_id`
-- `profilok`, `dolgozok`, `jelenleti_naplok`, `oktatasi_anyagok`, `dokumentumok`, `esemenyek`, `ertesitesek` ezekhez kapcsolhatók
-
-### Beléptetés és meghívásos regisztráció
-
-A jelenlegi auth folyamat meghívó tokennel induló regisztrációt feltételez, ezért a sémában ez külön támogatást kap.
-
-- a `meghivok` tábla tárolja a szervezeti hozzárendeléseket, szerepkört és lejáratot
-- az `ervenyes_meghivo_ellenorzese` SQL függvény ugyanazt a minimális adatcsomagot adja vissza, amit a webes kliens most is használ
-- a `profil_letrehozasa_meghivobol` trigger az `auth.users` rekord létrejöttekor automatikusan létrehozza vagy frissíti a `profilok` és `dolgozok` rekordokat
-
-### Profil és dolgozó adatok
-
-A `profilok`, `dolgozok`, `meghivok`, `dolgozo_dokumentumok` és `dokumentum_elfogadasok` együtt fedik le a dolgozói adminisztráció fő adatigényeit.
-
-#### Kezelt mezők és műveletek
-
-- **név** – a `profilok.teljes_nev` mezőben tárolva
-- **email** – a `profilok.email` mezőben, egyedi értékként
-- **telefonszám** – a `profilok.telefonszam` mezőben
-- **pozíció** – a `dolgozok.pozicio` és a `meghivok.pozicio` mezőkben
-- **szerepkör** – a `profilok.szerepkor` mezőben
-- **általános állapot** – a `profilok.statusz` és `dolgozok.statusz` mezőkben
-- **foglalkoztatási állapot** – a `dolgozok.foglalkoztatasi_statusz` mezőben, ami a riportokban is hasznos bontást ad
-- **cég / telephely / terület** – a szervezeti kapcsolatok minden fontos dolgozói rekordban külön is tárolhatók a gyorsabb szűréshez
-- **profilkép** – a `dolgozok.profilkep_url` mezőben, javasolt `profil-kepek` storage buckettel
-- **munkaviszony dátumok** – a `dolgozok.munkaviszony_kezdete` és `munkaviszony_vege` mezőkben
-- **meghívás küldése** – a `meghivok` tábla rögzíti a kiküldött meghívás címzettjét, szerepkörét, szervezeti hozzárendeléseit és státuszát
-
-### Jelenlét és napi státuszok
-
-A `jelenleti_naplok` és `napi_statuszok` együtt támogatják a napi munkakezdés és a riportok alapját.
-
-- a `jelenleti_naplok.nap` mező gyors napi riportolást ad
-- a `napi_statuszok` tetszőlegesen bővíthető, így a jelenlegi UI-ban is látható értékek, például *Munkában*, *Késés*, *Hiányzik* vagy *Szabadság* könnyen felvehetők
-- a `helyadat` és `foto_url` mezők előkészítik a későbbi GPS- és fotós igazolásokat
-
-### Oktatások
-
-Az oktatási modul a jelenlegi képernyők és riportok alapján nem csak anyaglistát, hanem teljesítési követést is igényel.
-
-- az `oktatasi_anyagok` tárolják a kötelező vagy ajánlott tartalmakat
-- az `oktatasi_anyagok.kategoria`, `terulet_id`, `ervenyes_tol`, `ervenyes_ig` mezők finomabb célzást és érvényességet támogatnak
-- az `oktatasi_teljesitesek` tárolják a felhasználóhoz vagy dolgozóhoz kapcsolt teljesítést
-- a `hatarido`, `megtekintve_at` és `teljesitesi_arany` mezők a jelenlegi admin riportokhoz is jobban illeszkednek
-
-### Dokumentumok
-
-A dokumentumkezelés két külön szintre bontva jelenik meg a sémában.
-
-#### 1. Vállalati dokumentumok
-
-A `dokumentumok` tábla a kötelezően elfogadandó vagy központilag kezelt dokumentumokat tárolja.
-
-- `tipus`
-- `verzio`
-- `kotelezo`
-- `ervenyes_tol`
-- `ervenyes_ig`
-
-#### 2. Elfogadási és egyedi dolgozói dokumentumok
-
-- a `dokumentum_elfogadasok` tábla követi, hogy egy adott profil elfogadta-e a dokumentumot
-- az `allapot` és `esedekes_datum` mezők a hiányzó elfogadások riportolását segítik
-- a `dolgozo_dokumentumok` tábla kezeli a dolgozóhoz feltöltött külön igazolásokat, mellékleteket és admin fájlokat
-
-### Események és jegyzőkönyvek
-
-Az `esemenyek` tábla az adminisztratív, működési és dolgozóhoz kapcsolódó bejegyzések rögzítésére szolgál.
-
-- **esemény rögzítése** – minden bejegyzés külön rekordként jön létre az `esemenyek` táblában
-- **rövid leírás** – a `rovid_leiras` mezőben tárolva
-- **részletes leírás** – a `reszletes_leiras` mezőben opcionálisan bővíthető
-- **kategória** – a `kategoria` mezőben, szabadon definiálható csoportosítással
-- **dátum** – az `esemeny_datum` mezőben, időbélyeggel együtt
-- **csatolmány** – a `csatolmany_url` mező hivatkozik a feltöltött fájlra
-- **kapcsolódó dolgozó** – a `dolgozo_id` mezővel kapcsolható egy konkrét dolgozóhoz
-- **kapcsolódó terület / telephely** – a `terulet_id` és `telephely_id` mezőkkel kapcsolható szervezeti egységhez
-- **rögzítő profil** – a `rogzito_profil_id` mezővel auditálható, ki hozta létre a rekordot
-- **admin láthatóság** – az `admin_lathato` logikai mező szabályozza a megjelenítést
-
-### Értesítések
-
-Az `ertesitesek` tábla a jelenlegi webes és mobilos értesítési központ alapját adja.
-
-- a `tipus`, `prioritas`, `allapot` és `cel` enum mezők konzisztens kliensoldali megjelenítést támogatnak
-- az `admin_listaban_megjelenik` mező külön kezeli az admin összesítő nézetet
-- a `forras_tipus` és `forras_azonosito` segítik a visszakövethetőséget
-- a `kuldes_csatorna`, `push_elokeszitve`, `push_token`, `push_elokeszitve_at`, `push_kuldve_at` mezők előkészítik a későbbi push integrációt
-
-### Rendszer naplók
-
-A `rendszer_naplok` tábla audit- és hibakeresési célokra készült.
-
-- `profil_id` – ki végezte a műveletet
-- `ceg_id` – melyik szervezethez tartozott az esemény
-- `muvelet` – milyen akció történt
-- `entitas` és `entitas_azonosito` – melyik objektumot érintette
-- `reszletek` – tetszőleges JSON részletek
-
-## RLS és működési megjegyzések
-
-A `docs/supabase/rls.sql` fájl a teljes induló struktúrára bekapcsolja a Row Level Security-t, és a következő alapelvet követi:
-
-- a szuperadmin mindent láthat
-- a cégadmin a saját cégéhez tartozó adatokat láthatja
-- a területvezető a saját területéhez kapcsolódó adatokhoz fér hozzá
-- a dolgozó legalább a saját profilját, jelenléti, oktatási és dokumentum-elfogadási adatait elérheti
-
-## Javasolt következő lépések
-
-- a `schema.sql` és `rls.sql` fájlokat futtasd le a Supabase projektben migrációként
-- a seed adatokat csak fejlesztői vagy demo környezetben használd
-- ha a riportok később éles adatforrásra váltanak, érdemes külön SQL view-kat is létrehozni a dolgozói, oktatási és hiányzó elfogadási listákhoz
+1. Új Supabase projekt létrehozása.
+2. `schema.sql` futtatása migrációként.
+3. `rls.sql` futtatása a policy-k aktiválásához.
+4. `seed.sql` futtatása csak dev / demo környezetben.
+5. Storage bucketek létrehozása.
+6. Auth redirect URL-ek és email sablonok beállítása.
+7. Kliens `.env` fájlok kitöltése.
