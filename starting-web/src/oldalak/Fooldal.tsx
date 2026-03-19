@@ -62,26 +62,34 @@ const statisztikak = [
   { cim: 'Fókusz', ertek: 'Beléptetés, jelenlét, oktatás, admin' },
 ];
 
+const designElvarasok = [
+  'Modern, üzleti és letisztult megjelenés.',
+  'Gyorsan átlátható, jól olvasható tartalmi blokkok.',
+  'Mobilbarát felület nagy kattintási felületekkel.',
+  'Hibátlan magyar ékezetek és következetes megfogalmazás.',
+  'Professzionális, megbízható és tiszta színvilág túlzó látványelemek nélkül.',
+];
+
 export function Fooldal() {
   return (
-    <main className="min-h-screen bg-halo text-white">
+    <main className="min-h-screen bg-halo text-starting-sotet">
       <section className="mx-auto max-w-7xl px-6 pb-24 pt-6 sm:px-8 lg:px-10">
-        <header className="flex flex-col gap-6 rounded-[2rem] border border-white/10 bg-white/5 px-6 py-5 backdrop-blur lg:flex-row lg:items-center lg:justify-between">
-          <MarkaJelveny />
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
-            <a className="rounded-full px-4 py-2 transition hover:bg-white/10" href="#funkciok">
+        <header className="flex flex-col gap-6 rounded-[2rem] border border-starting-keret/80 bg-white/90 px-6 py-5 shadow-sm backdrop-blur lg:flex-row lg:items-center lg:justify-between">
+          <MarkaJelveny vilagos />
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+            <a className="rounded-full px-5 py-3 transition hover:bg-slate-100" href="#funkciok">
               Fő funkciók
             </a>
-            <a className="rounded-full px-4 py-2 transition hover:bg-white/10" href="#vezetoknek">
+            <a className="rounded-full px-5 py-3 transition hover:bg-slate-100" href="#vezetoknek">
               Vezetőknek
             </a>
-            <a className="rounded-full px-4 py-2 transition hover:bg-white/10" href="#kapcsolat">
+            <a className="rounded-full px-5 py-3 transition hover:bg-slate-100" href="#kapcsolat">
               Kapcsolat
             </a>
-            <NavigaciosLink className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 font-medium text-white transition hover:bg-white/10" href="/belepes">
+            <NavigaciosLink className="rounded-full border border-starting-keret bg-white px-5 py-3 font-medium text-starting-sotet transition hover:bg-slate-50" href="/belepes">
               Belépés
             </NavigaciosLink>
-            <NavigaciosLink className="rounded-full bg-starting-primer px-5 py-2.5 font-medium text-white transition hover:bg-starting-primerVilagos" href="/regisztracio">
+            <NavigaciosLink className="rounded-full bg-starting-primer px-5 py-3 font-medium text-white transition hover:bg-starting-primerVilagos" href="/regisztracio">
               Regisztráció
             </NavigaciosLink>
           </div>
@@ -89,44 +97,51 @@ export function Fooldal() {
 
         <div className="grid gap-12 pb-20 pt-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
           <div>
-            <p className="mb-5 inline-flex rounded-full border border-starting-primer/30 bg-starting-primer/10 px-4 py-2 text-sm font-medium text-starting-primerVilagos">
+            <p className="mb-5 inline-flex rounded-full border border-starting-primer/15 bg-starting-primer/10 px-4 py-2 text-sm font-medium text-starting-primer">
               Modern üzleti rendszer dolgozói működéshez, vezetői kontrollal
             </p>
-            <h1 className="max-w-4xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="max-w-4xl text-4xl font-semibold leading-tight tracking-tight text-starting-sotet sm:text-5xl lg:text-6xl">
               Starting – egyetlen platform a dolgozók beléptetésére, napi működésére és vállalati adminisztrációjára.
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
               Röviden: gyorsabb indulás, kevesebb manuális adminisztráció és jobban átlátható napi működés. A Starting a webes vezetői
               felületet és a mobilos dolgozói használatot egy közös rendszerbe rendezi.
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <NavigaciosLink
-                className="inline-flex items-center justify-center rounded-full bg-starting-primer px-6 py-3.5 text-base font-semibold text-white transition hover:bg-starting-primerVilagos"
+                className="inline-flex min-h-14 items-center justify-center rounded-full bg-starting-primer px-7 py-4 text-base font-semibold text-white transition hover:bg-starting-primerVilagos"
                 href="/regisztracio"
               >
                 Kipróbálom a rendszert
               </NavigaciosLink>
               <a
-                className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex min-h-14 items-center justify-center rounded-full border border-starting-keret bg-white px-7 py-4 text-base font-semibold text-starting-sotet transition hover:bg-slate-50"
                 href="#kapcsolat"
               >
                 Érdeklődés előkészítése
               </a>
             </div>
+            <ul className="mt-8 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+              {designElvarasok.map((elvaras) => (
+                <li key={elvaras} className="rounded-2xl border border-starting-keret/70 bg-white/80 px-4 py-4 shadow-sm">
+                  {elvaras}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6 shadow-kartya backdrop-blur">
+          <div className="rounded-[2rem] border border-starting-keret/70 bg-white p-6 shadow-kartya">
             <div className="grid gap-4">
               {statisztikak.map((statisztika) => (
-                <div key={statisztika.cim} className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                  <p className="text-sm text-slate-400">{statisztika.cim}</p>
-                  <p className="mt-2 text-xl font-semibold text-white">{statisztika.ertek}</p>
+                <div key={statisztika.cim} className="rounded-2xl border border-starting-keret/70 bg-starting-felulet p-5">
+                  <p className="text-sm text-slate-500">{statisztika.cim}</p>
+                  <p className="mt-2 text-xl font-semibold text-starting-sotet">{statisztika.ertek}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-6 rounded-[1.5rem] border border-starting-primer/20 bg-gradient-to-br from-starting-primer/20 to-sky-400/10 p-6">
-              <p className="text-sm uppercase tracking-[0.3em] text-starting-primerVilagos">Miért erős ajánlat?</p>
-              <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-200">
+            <div className="mt-6 rounded-[1.5rem] border border-starting-primer/15 bg-starting-primer/5 p-6">
+              <p className="text-sm uppercase tracking-[0.3em] text-starting-primer">Miért erős ajánlat?</p>
+              <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
                 <li>• a vezetői nézet és a dolgozói használat ugyanarra az adatra épül</li>
                 <li>• a belépéstől az oktatásig minden egy rendszerben marad</li>
                 <li>• a Starting márka modern, üzleti és könnyen továbbépíthető</li>
@@ -137,7 +152,7 @@ export function Fooldal() {
         </div>
       </section>
 
-      <section id="funkciok" className="border-y border-white/10 bg-slate-950/50 px-6 py-20 sm:px-8 lg:px-10">
+      <section id="funkciok" className="border-y border-starting-keret/70 bg-white/70 px-6 py-20 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <SzakaszCim
             felirat="Fő funkciók"
@@ -163,30 +178,30 @@ export function Fooldal() {
           />
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
             {vezetoiElonyok.map((elony) => (
-              <div key={elony.cim} className="rounded-[2rem] border border-white/10 bg-white/5 p-7 shadow-kartya backdrop-blur">
-                <h3 className="text-xl font-semibold text-white">{elony.cim}</h3>
-                <p className="mt-4 text-sm leading-7 text-slate-300">{elony.leiras}</p>
+              <div key={elony.cim} className="rounded-[2rem] border border-starting-keret/70 bg-white p-7 shadow-kartya">
+                <h3 className="text-xl font-semibold text-starting-sotet">{elony.cim}</h3>
+                <p className="mt-4 text-sm leading-7 text-slate-600">{elony.leiras}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-slate-950/40 px-6 py-20 sm:px-8 lg:px-10">
+      <section className="border-y border-starting-keret/70 bg-slate-50/80 px-6 py-20 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-7xl grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.35em] text-starting-primerVilagos">Web + app</p>
-            <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">Kiemelten kommunikálja, hogy a rendszer nem csak webes admin felület.</h2>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+            <p className="text-sm font-semibold uppercase tracking-[0.35em] text-starting-primer">Web + app</p>
+            <h2 className="mt-4 text-3xl font-semibold text-starting-sotet sm:text-4xl">Kiemelten kommunikálja, hogy a rendszer nem csak webes admin felület.</h2>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600">
               A Starting pozicionálása így egyértelmű: a vezetők weben irányítanak, a dolgozók pedig appban vagy mobilról is használhatják a napi folyamatokat,
               miközben minden ugyanahhoz a háttérrendszerhez kapcsolódik.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {platformKartyak.map((kartya) => (
-              <article key={kartya.cim} className="rounded-[1.75rem] border border-white/10 bg-white/5 p-6">
-                <h3 className="text-xl font-semibold text-white">{kartya.cim}</h3>
-                <p className="mt-4 text-sm leading-7 text-slate-300">{kartya.leiras}</p>
+              <article key={kartya.cim} className="rounded-[1.75rem] border border-starting-keret/70 bg-white p-6 shadow-sm">
+                <h3 className="text-xl font-semibold text-starting-sotet">{kartya.cim}</h3>
+                <p className="mt-4 text-sm leading-7 text-slate-600">{kartya.leiras}</p>
               </article>
             ))}
           </div>
@@ -194,42 +209,42 @@ export function Fooldal() {
       </section>
 
       <section id="kapcsolat" className="px-6 py-20 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl rounded-[2rem] border border-starting-primer/30 bg-gradient-to-r from-starting-primer/20 via-slate-900 to-sky-500/20 p-8 sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
+        <div className="mx-auto max-w-7xl rounded-[2rem] border border-starting-keret/70 bg-white p-8 shadow-kartya sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-starting-primerVilagos">Kapcsolat / érdeklődés</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">A kapcsolatfelvétel helye is elő van készítve a következő iterációhoz.</h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-200">
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-starting-primer">Kapcsolat / érdeklődés</p>
+            <h2 className="mt-3 text-3xl font-semibold text-starting-sotet sm:text-4xl">A kapcsolatfelvétel helye is elő van készítve a következő iterációhoz.</h2>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
               A landing oldal már alkalmas arra, hogy ide kerüljön ajánlatkérés, demo igénylés vagy közvetlen üzleti kapcsolatfelvétel. Addig is a CTA-k és a
               blokkstruktúra egyértelműen kijelölik ennek a helyét.
             </p>
-            <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-100">
+            <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-600">
               {kapcsolatLepesek.map((lepespont) => (
                 <li key={lepespont}>• {lepespont}</li>
               ))}
             </ul>
           </div>
           <div className="mt-8 flex flex-col gap-4 sm:flex-row lg:mt-0 lg:flex-col">
-            <a className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100" href="mailto:hello@starting.hu">
+            <a className="inline-flex min-h-14 items-center justify-center rounded-full bg-starting-primer px-6 py-4 font-semibold text-white transition hover:bg-starting-primerVilagos" href="mailto:hello@starting.hu">
               Kapcsolat előkészítve
             </a>
-            <NavigaciosLink className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10" href="/belepes">
+            <NavigaciosLink className="inline-flex min-h-14 items-center justify-center rounded-full border border-starting-keret px-6 py-4 font-semibold text-starting-sotet transition hover:bg-slate-50" href="/belepes">
               Belépés a rendszerbe
             </NavigaciosLink>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-white/10 px-6 py-8 text-sm text-slate-400 sm:px-8 lg:px-10">
+      <footer className="border-t border-starting-keret/70 px-6 py-8 text-sm text-slate-500 sm:px-8 lg:px-10">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Starting. Digitális működés weben és mobilon.</p>
           <div className="flex flex-wrap gap-4">
-            <NavigaciosLink className="transition hover:text-white" href="/adatkezeles">
+            <NavigaciosLink className="transition hover:text-starting-sotet" href="/adatkezeles">
               Adatkezelés
             </NavigaciosLink>
-            <NavigaciosLink className="transition hover:text-white" href="/aszf">
+            <NavigaciosLink className="transition hover:text-starting-sotet" href="/aszf">
               ÁSZF
             </NavigaciosLink>
-            <NavigaciosLink className="transition hover:text-white" href="/elfelejtett-jelszo">
+            <NavigaciosLink className="transition hover:text-starting-sotet" href="/elfelejtett-jelszo">
               Elfelejtett jelszó
             </NavigaciosLink>
           </div>
