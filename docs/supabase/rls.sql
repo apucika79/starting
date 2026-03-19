@@ -16,28 +16,81 @@ alter table public.esemenyek enable row level security;
 alter table public.ertesitesek enable row level security;
 alter table public.rendszer_naplok enable row level security;
 
+alter table public.cegek force row level security;
+alter table public.telephelyek force row level security;
+alter table public.teruletek force row level security;
+alter table public.profilok force row level security;
+alter table public.dolgozok force row level security;
+alter table public.meghivok force row level security;
+alter table public.napi_statuszok force row level security;
+alter table public.jelenleti_naplok force row level security;
+alter table public.oktatasi_anyagok force row level security;
+alter table public.oktatasi_teljesitesek force row level security;
+alter table public.dokumentumok force row level security;
+alter table public.dolgozo_dokumentumok force row level security;
+alter table public.dokumentum_elfogadasok force row level security;
+alter table public.esemenyek force row level security;
+alter table public.ertesitesek force row level security;
+alter table public.rendszer_naplok force row level security;
+
 create or replace function public.aktualis_szerepkor()
 returns public.felhasznaloi_szerepkor
 language sql
 stable
+security definer
+set search_path = public
 as $$
-  select szerepkor from public.profilok where id = auth.uid()
+  select szerepkor
+  from public.profilok
+  where id = auth.uid()
 $$;
 
 create or replace function public.aktualis_ceg_id()
 returns uuid
 language sql
 stable
+security definer
+set search_path = public
 as $$
-  select ceg_id from public.profilok where id = auth.uid()
+  select ceg_id
+  from public.profilok
+  where id = auth.uid()
+$$;
+
+create or replace function public.aktualis_telephely_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select telephely_id
+  from public.profilok
+  where id = auth.uid()
 $$;
 
 create or replace function public.aktualis_terulet_id()
 returns uuid
 language sql
 stable
+security definer
+set search_path = public
 as $$
-  select terulet_id from public.profilok where id = auth.uid()
+  select terulet_id
+  from public.profilok
+  where id = auth.uid()
+$$;
+
+create or replace function public.aktualis_dolgozo_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select d.id
+  from public.dolgozok d
+  where d.profil_id = auth.uid()
 $$;
 
 create or replace function public.szuperadmin_e()
@@ -48,16 +101,62 @@ as $$
   select public.aktualis_szerepkor() = 'szuperadmin'
 $$;
 
+create or replace function public.ceg_admin_e()
+returns boolean
+language sql
+stable
+as $$
+  select public.aktualis_szerepkor() = 'ceg_admin'
+$$;
+
+create or replace function public.terulet_vezeto_e()
+returns boolean
+language sql
+stable
+as $$
+  select public.aktualis_szerepkor() = 'terulet_vezeto'
+$$;
+
+create or replace function public.dolgozo_e()
+returns boolean
+language sql
+stable
+as $$
+  select public.aktualis_szerepkor() = 'dolgozo'
+$$;
+
 create or replace function public.ceg_hozzaferes_van(ceg_azonosito uuid)
 returns boolean
 language sql
 stable
 as $$
   select
-    public.szuperadmin_e()
-    or (
-      public.aktualis_szerepkor() in ('ceg_admin', 'terulet_vezeto', 'dolgozo')
-      and ceg_azonosito = public.aktualis_ceg_id()
+    ceg_azonosito is not null
+    and (
+      public.szuperadmin_e()
+      or (public.ceg_admin_e() and ceg_azonosito = public.aktualis_ceg_id())
+      or (public.terulet_vezeto_e() and ceg_azonosito = public.aktualis_ceg_id())
+      or (public.dolgozo_e() and ceg_azonosito = public.aktualis_ceg_id())
+    )
+$$;
+
+create or replace function public.telephely_hozzaferes_van(telephely_azonosito uuid)
+returns boolean
+language sql
+stable
+as $$
+  select
+    telephely_azonosito is not null
+    and (
+      public.szuperadmin_e()
+      or (public.ceg_admin_e() and exists (
+        select 1
+        from public.telephelyek t
+        where t.id = telephely_azonosito
+          and t.ceg_id = public.aktualis_ceg_id()
+      ))
+      or (public.terulet_vezeto_e() and telephely_azonosito = public.aktualis_telephely_id())
+      or (public.dolgozo_e() and telephely_azonosito = public.aktualis_telephely_id())
     )
 $$;
 
@@ -67,15 +166,50 @@ language sql
 stable
 as $$
   select
+    terulet_azonosito is not null
+    and (
+      public.szuperadmin_e()
+      or (public.ceg_admin_e() and exists (
+        select 1
+        from public.teruletek tr
+        join public.telephelyek tp on tp.id = tr.telephely_id
+        where tr.id = terulet_azonosito
+          and tp.ceg_id = public.aktualis_ceg_id()
+      ))
+      or (public.terulet_vezeto_e() and terulet_azonosito = public.aktualis_terulet_id())
+      or (public.dolgozo_e() and terulet_azonosito = public.aktualis_terulet_id())
+    )
+$$;
+
+create or replace function public.oktatasi_vagy_dokumentum_elerheto(ceg_azonosito uuid, terulet_azonosito uuid)
+returns boolean
+language sql
+stable
+as $$
+  select
     public.szuperadmin_e()
-    or public.aktualis_szerepkor() = 'ceg_admin'
     or (
-      public.aktualis_szerepkor() = 'terulet_vezeto'
-      and terulet_azonosito = public.aktualis_terulet_id()
+      public.ceg_admin_e()
+      and (
+        ceg_azonosito is null
+        or ceg_azonosito = public.aktualis_ceg_id()
+      )
     )
     or (
-      public.aktualis_szerepkor() = 'dolgozo'
-      and terulet_azonosito = public.aktualis_terulet_id()
+      public.terulet_vezeto_e()
+      and ceg_azonosito = public.aktualis_ceg_id()
+      and (
+        terulet_azonosito is null
+        or terulet_azonosito = public.aktualis_terulet_id()
+      )
+    )
+    or (
+      public.dolgozo_e()
+      and ceg_azonosito = public.aktualis_ceg_id()
+      and (
+        terulet_azonosito is null
+        or terulet_azonosito = public.aktualis_terulet_id()
+      )
     )
 $$;
 
@@ -112,75 +246,83 @@ $$;
 
 grant execute on function public.ervenyes_meghivo_ellenorzese(text, text) to anon, authenticated;
 
-drop policy if exists "szuperadmin minden ceget lat" on public.cegek;
-create policy "szuperadmin minden ceget lat"
+drop policy if exists "ceg szint csak ceg adminnak vagy szuperadminnak" on public.cegek;
+create policy "ceg szint csak ceg adminnak vagy szuperadminnak"
 on public.cegek
 for select
-using (public.szuperadmin_e());
+using (
+  public.szuperadmin_e()
+  or (public.ceg_admin_e() and id = public.aktualis_ceg_id())
+);
 
-drop policy if exists "sajat ceg elerheto" on public.cegek;
-create policy "sajat ceg elerheto"
-on public.cegek
-for select
-using (public.ceg_hozzaferes_van(id));
-
-drop policy if exists "sajat ceg telephelyei" on public.telephelyek;
-create policy "sajat ceg telephelyei"
+drop policy if exists "telephely szint szerepkor szerint" on public.telephelyek;
+create policy "telephely szint szerepkor szerint"
 on public.telephelyek
 for select
-using (public.ceg_hozzaferes_van(ceg_id));
+using (
+  public.szuperadmin_e()
+  or (public.ceg_admin_e() and ceg_id = public.aktualis_ceg_id())
+  or (public.terulet_vezeto_e() and id = public.aktualis_telephely_id())
+  or (public.dolgozo_e() and id = public.aktualis_telephely_id())
+);
 
-drop policy if exists "sajat ceg teruletei" on public.teruletek;
-create policy "sajat ceg teruletei"
+drop policy if exists "terulet szint szerepkor szerint" on public.teruletek;
+create policy "terulet szint szerepkor szerint"
 on public.teruletek
 for select
 using (
-  exists (
-    select 1
-    from public.telephelyek t
-    where t.id = telephely_id
-      and public.ceg_hozzaferes_van(t.ceg_id)
+  public.szuperadmin_e()
+  or (
+    public.ceg_admin_e()
+    and exists (
+      select 1
+      from public.telephelyek tp
+      where tp.id = telephely_id
+        and tp.ceg_id = public.aktualis_ceg_id()
+    )
   )
+  or (public.terulet_vezeto_e() and id = public.aktualis_terulet_id())
+  or (public.dolgozo_e() and id = public.aktualis_terulet_id())
 );
 
-drop policy if exists "profil olvashato sajat szervezetben" on public.profilok;
-create policy "profil olvashato sajat szervezetben"
+drop policy if exists "profil olvashato szigoruan szerepkor szerint" on public.profilok;
+create policy "profil olvashato szigoruan szerepkor szerint"
 on public.profilok
 for select
 using (
   public.szuperadmin_e()
   or id = auth.uid()
   or (
-    public.aktualis_szerepkor() = 'ceg_admin'
+    public.ceg_admin_e()
     and ceg_id = public.aktualis_ceg_id()
   )
   or (
-    public.aktualis_szerepkor() = 'terulet_vezeto'
+    public.terulet_vezeto_e()
     and terulet_id = public.aktualis_terulet_id()
   )
 );
 
-drop policy if exists "dolgozo olvashato sajat szervezetben" on public.dolgozok;
-create policy "dolgozo olvashato sajat szervezetben"
+drop policy if exists "dolgozo olvashato szigoruan szerepkor szerint" on public.dolgozok;
+create policy "dolgozo olvashato szigoruan szerepkor szerint"
 on public.dolgozok
 for select
 using (
-  public.ceg_hozzaferes_van(ceg_id)
-  and (
-    public.aktualis_szerepkor() in ('szuperadmin', 'ceg_admin')
-    or profil_id = auth.uid()
-    or terulet_id = public.aktualis_terulet_id()
-  )
+  public.szuperadmin_e()
+  or (public.ceg_admin_e() and ceg_id = public.aktualis_ceg_id())
+  or (public.terulet_vezeto_e() and terulet_id = public.aktualis_terulet_id())
+  or profil_id = auth.uid()
 );
 
-drop policy if exists "meghivo ceg adminnak lathato" on public.meghivok;
-create policy "meghivo ceg adminnak lathato"
+drop policy if exists "meghivo olvashato szervezeti scope szerint" on public.meghivok;
+create policy "meghivo olvashato szervezeti scope szerint"
 on public.meghivok
 for select
 using (
   public.szuperadmin_e()
+  or (public.ceg_admin_e() and ceg_id = public.aktualis_ceg_id())
   or (
-    public.aktualis_szerepkor() = 'ceg_admin'
+    public.terulet_vezeto_e()
+    and terulet_id = public.aktualis_terulet_id()
     and ceg_id = public.aktualis_ceg_id()
   )
 );
@@ -191,125 +333,127 @@ on public.napi_statuszok
 for select
 using (auth.role() = 'authenticated');
 
-drop policy if exists "jelenleti naplo sajat cegben" on public.jelenleti_naplok;
-create policy "jelenleti naplo sajat cegben"
+drop policy if exists "jelenleti naplo olvashato szigoruan szerepkor szerint" on public.jelenleti_naplok;
+create policy "jelenleti naplo olvashato szigoruan szerepkor szerint"
 on public.jelenleti_naplok
 for select
 using (
-  public.ceg_hozzaferes_van(ceg_id)
-  and (
-    public.aktualis_szerepkor() in ('szuperadmin', 'ceg_admin')
-    or dolgozo_id in (select d.id from public.dolgozok d where d.profil_id = auth.uid())
-    or terulet_id = public.aktualis_terulet_id()
-  )
+  public.szuperadmin_e()
+  or (public.ceg_admin_e() and ceg_id = public.aktualis_ceg_id())
+  or (public.terulet_vezeto_e() and terulet_id = public.aktualis_terulet_id())
+  or dolgozo_id = public.aktualis_dolgozo_id()
 );
 
-drop policy if exists "oktatasi anyag sajat cegben" on public.oktatasi_anyagok;
-create policy "oktatasi anyag sajat cegben"
+drop policy if exists "oktatasi anyag olvashato szigoruan szerepkor szerint" on public.oktatasi_anyagok;
+create policy "oktatasi anyag olvashato szigoruan szerepkor szerint"
 on public.oktatasi_anyagok
 for select
 using (
-  ceg_id is null
-  or public.ceg_hozzaferes_van(ceg_id)
+  public.oktatasi_vagy_dokumentum_elerheto(ceg_id, terulet_id)
 );
 
-drop policy if exists "oktatasi teljesites sajat profilhoz vagy ceghez" on public.oktatasi_teljesitesek;
-create policy "oktatasi teljesites sajat profilhoz vagy ceghez"
+drop policy if exists "oktatasi teljesites olvashato szigoruan szerepkor szerint" on public.oktatasi_teljesitesek;
+create policy "oktatasi teljesites olvashato szigoruan szerepkor szerint"
 on public.oktatasi_teljesitesek
 for select
 using (
-  profil_id = auth.uid()
+  public.szuperadmin_e()
+  or profil_id = auth.uid()
   or exists (
     select 1
     from public.profilok p
     where p.id = oktatasi_teljesitesek.profil_id
-      and public.ceg_hozzaferes_van(p.ceg_id)
       and (
-        public.aktualis_szerepkor() in ('szuperadmin', 'ceg_admin')
-        or p.terulet_id = public.aktualis_terulet_id()
+        (public.ceg_admin_e() and p.ceg_id = public.aktualis_ceg_id())
+        or (public.terulet_vezeto_e() and p.terulet_id = public.aktualis_terulet_id())
       )
   )
 );
 
-drop policy if exists "dokumentum sajat cegben" on public.dokumentumok;
-create policy "dokumentum sajat cegben"
+drop policy if exists "dokumentum olvashato szigoruan szerepkor szerint" on public.dokumentumok;
+create policy "dokumentum olvashato szigoruan szerepkor szerint"
 on public.dokumentumok
 for select
 using (
-  ceg_id is null
-  or public.ceg_hozzaferes_van(ceg_id)
+  public.oktatasi_vagy_dokumentum_elerheto(ceg_id, terulet_id)
 );
 
-drop policy if exists "dolgozo dokumentum sajat cegben" on public.dolgozo_dokumentumok;
-create policy "dolgozo dokumentum sajat cegben"
+drop policy if exists "dolgozo dokumentum olvashato szigoruan szerepkor szerint" on public.dolgozo_dokumentumok;
+create policy "dolgozo dokumentum olvashato szigoruan szerepkor szerint"
 on public.dolgozo_dokumentumok
 for select
 using (
-  public.ceg_hozzaferes_van(ceg_id)
-  and (
-    public.aktualis_szerepkor() in ('szuperadmin', 'ceg_admin')
-    or dolgozo_id in (select d.id from public.dolgozok d where d.profil_id = auth.uid())
+  public.szuperadmin_e()
+  or (public.ceg_admin_e() and ceg_id = public.aktualis_ceg_id())
+  or (
+    public.terulet_vezeto_e()
+    and exists (
+      select 1
+      from public.dolgozok d
+      where d.id = dolgozo_dokumentumok.dolgozo_id
+        and d.terulet_id = public.aktualis_terulet_id()
+    )
   )
+  or dolgozo_id = public.aktualis_dolgozo_id()
 );
 
-drop policy if exists "dokumentum elfogadas sajat profilhoz vagy ceghez" on public.dokumentum_elfogadasok;
-create policy "dokumentum elfogadas sajat profilhoz vagy ceghez"
+drop policy if exists "dokumentum elfogadas olvashato szigoruan szerepkor szerint" on public.dokumentum_elfogadasok;
+create policy "dokumentum elfogadas olvashato szigoruan szerepkor szerint"
 on public.dokumentum_elfogadasok
 for select
 using (
-  profil_id = auth.uid()
+  public.szuperadmin_e()
+  or profil_id = auth.uid()
   or exists (
     select 1
     from public.profilok p
     where p.id = dokumentum_elfogadasok.profil_id
-      and public.ceg_hozzaferes_van(p.ceg_id)
       and (
-        public.aktualis_szerepkor() in ('szuperadmin', 'ceg_admin')
-        or p.terulet_id = public.aktualis_terulet_id()
+        (public.ceg_admin_e() and p.ceg_id = public.aktualis_ceg_id())
+        or (public.terulet_vezeto_e() and p.terulet_id = public.aktualis_terulet_id())
       )
   )
 );
 
-drop policy if exists "esemeny sajat cegben" on public.esemenyek;
-create policy "esemeny sajat cegben"
+drop policy if exists "esemeny olvashato szigoruan szerepkor szerint" on public.esemenyek;
+create policy "esemeny olvashato szigoruan szerepkor szerint"
 on public.esemenyek
 for select
 using (
-  public.ceg_hozzaferes_van(ceg_id)
-  and (
-    public.aktualis_szerepkor() in ('szuperadmin', 'ceg_admin')
-    or (public.aktualis_szerepkor() = 'terulet_vezeto' and terulet_id = public.aktualis_terulet_id())
-    or (public.aktualis_szerepkor() = 'dolgozo' and admin_lathato = false and dolgozo_id in (select d.id from public.dolgozok d where d.profil_id = auth.uid()))
+  public.szuperadmin_e()
+  or (public.ceg_admin_e() and ceg_id = public.aktualis_ceg_id())
+  or (public.terulet_vezeto_e() and terulet_id = public.aktualis_terulet_id())
+  or (
+    public.dolgozo_e()
+    and dolgozo_id = public.aktualis_dolgozo_id()
+    and admin_lathato = false
   )
 );
 
-drop policy if exists "ertesites sajat vagy admin listabol" on public.ertesitesek;
-create policy "ertesites sajat vagy admin listabol"
+drop policy if exists "ertesites olvashato szigoruan szerepkor szerint" on public.ertesitesek;
+create policy "ertesites olvashato szigoruan szerepkor szerint"
 on public.ertesitesek
 for select
 using (
   public.szuperadmin_e()
   or profil_id = auth.uid()
   or (
-    public.aktualis_szerepkor() = 'ceg_admin'
+    public.ceg_admin_e()
     and ceg_id = public.aktualis_ceg_id()
     and admin_listaban_megjelenik = true
   )
   or (
-    public.aktualis_szerepkor() = 'terulet_vezeto'
+    public.terulet_vezeto_e()
     and terulet_id = public.aktualis_terulet_id()
-    and cel in ('terulet_vezeto', 'globalis_admin')
+    and admin_listaban_megjelenik = true
   )
 );
 
-drop policy if exists "rendszer naplo csak adminnak" on public.rendszer_naplok;
-create policy "rendszer naplo csak adminnak"
+drop policy if exists "rendszer naplo csak megfelelo admin scopeban" on public.rendszer_naplok;
+create policy "rendszer naplo csak megfelelo admin scopeban"
 on public.rendszer_naplok
 for select
 using (
   public.szuperadmin_e()
-  or (
-    public.aktualis_szerepkor() = 'ceg_admin'
-    and public.ceg_hozzaferes_van(ceg_id)
-  )
+  or (public.ceg_admin_e() and ceg_id = public.aktualis_ceg_id())
 );
