@@ -3,6 +3,7 @@ create extension if not exists pgcrypto;
 
 create type public.felhasznaloi_szerepkor as enum ('szuperadmin', 'ceg_admin', 'terulet_vezeto', 'dolgozo');
 create type public.altalanos_statusz as enum ('aktiv', 'inaktiv', 'torolt');
+create type public.meghivo_statusz as enum ('fuggoben', 'elfogadva', 'lejart', 'visszavonva');
 
 create table if not exists public.cegek (
   id uuid primary key default gen_random_uuid(),
@@ -73,11 +74,22 @@ create table if not exists public.dolgozok (
 create table if not exists public.meghivok (
   id uuid primary key default gen_random_uuid(),
   ceg_id uuid not null references public.cegek(id),
+  telephely_id uuid references public.telephelyek(id),
+  terulet_id uuid references public.teruletek(id),
+  kuldo_profil_id uuid references public.profilok(id),
   email text not null,
+  teljes_nev text,
+  telefonszam text,
+  pozicio text,
   szerepkor public.felhasznaloi_szerepkor not null,
+  statusz public.meghivo_statusz not null default 'fuggoben',
   token text not null unique,
   lejarat timestamp with time zone not null,
+  elkuldve timestamp with time zone not null default now(),
+  ujrakuldve timestamp with time zone,
   elfogadva boolean not null default false,
+  elfogadva_at timestamp with time zone,
+  visszavonva_at timestamp with time zone,
   letrehozva timestamp with time zone not null default now()
 );
 
@@ -143,6 +155,21 @@ create table if not exists public.dokumentumok (
   frissitve timestamp with time zone not null default now()
 );
 
+create table if not exists public.dolgozo_dokumentumok (
+  id uuid primary key default gen_random_uuid(),
+  dolgozo_id uuid not null references public.dolgozok(id),
+  ceg_id uuid not null references public.cegek(id),
+  feltolto_profil_id uuid references public.profilok(id),
+  cim text not null,
+  dokumentum_tipus text not null,
+  fajl_url text not null,
+  megjegyzes text,
+  ervenyes_eddig timestamp with time zone,
+  statusz public.altalanos_statusz not null default 'aktiv',
+  letrehozva timestamp with time zone not null default now(),
+  frissitve timestamp with time zone not null default now()
+);
+
 create table if not exists public.dokumentum_elfogadasok (
   id uuid primary key default gen_random_uuid(),
   dokumentum_id uuid not null references public.dokumentumok(id),
@@ -195,6 +222,9 @@ create index if not exists idx_teruletek_telephely_id on public.teruletek (telep
 create index if not exists idx_profilok_ceg_id on public.profilok (ceg_id);
 create unique index if not exists idx_cegek_adoszam_unique on public.cegek (adoszam) where adoszam is not null;
 create index if not exists idx_dolgozok_ceg_id on public.dolgozok (ceg_id);
+create index if not exists idx_dolgozo_dokumentumok_dolgozo_id on public.dolgozo_dokumentumok (dolgozo_id);
+create index if not exists idx_meghivok_ceg_id on public.meghivok (ceg_id);
+create index if not exists idx_meghivok_statusz on public.meghivok (statusz);
 create index if not exists idx_jelenleti_naplok_dolgozo_id on public.jelenleti_naplok (dolgozo_id);
 create index if not exists idx_ertesitesek_profil_id on public.ertesitesek (profil_id);
 
@@ -214,6 +244,7 @@ begin
   where lower(token) = lower(coalesce(new.raw_user_meta_data ->> 'meghivo_token', ''))
     and lower(email) = lower(new.email)
     and elfogadva = false
+    and statusz = 'fuggoben'
     and lejarat > now()
   limit 1;
 
@@ -223,25 +254,34 @@ begin
 
   teljes_nev_ertek := nullif(trim(coalesce(new.raw_user_meta_data ->> 'teljes_nev', '')), '');
 
-  insert into public.profilok (id, ceg_id, teljes_nev, email, szerepkor, statusz)
+  insert into public.profilok (id, ceg_id, telephely_id, terulet_id, teljes_nev, email, telefonszam, szerepkor, statusz)
   values (
     new.id,
     meghivo.ceg_id,
-    coalesce(teljes_nev_ertek, split_part(new.email, '@', 1)),
+    meghivo.telephely_id,
+    meghivo.terulet_id,
+    coalesce(teljes_nev_ertek, meghivo.teljes_nev, split_part(new.email, '@', 1)),
     new.email,
+    meghivo.telefonszam,
     meghivo.szerepkor,
     'aktiv'
   )
   on conflict (id) do update
   set
     ceg_id = excluded.ceg_id,
+    telephely_id = excluded.telephely_id,
+    terulet_id = excluded.terulet_id,
     teljes_nev = excluded.teljes_nev,
     email = excluded.email,
+    telefonszam = excluded.telefonszam,
     szerepkor = excluded.szerepkor,
     frissitve = now();
 
   update public.meghivok
-  set elfogadva = true
+  set
+    elfogadva = true,
+    elfogadva_at = now(),
+    statusz = 'elfogadva'
   where id = meghivo.id;
 
   return new;

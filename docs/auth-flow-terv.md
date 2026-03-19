@@ -20,6 +20,7 @@
 
 ## Későbbi lépések
 
+- admin oldali dolgozó-meghívás küldés, újraküldés és visszavonás a szervezeti hozzárendelések előtöltésével
 - meghívó token validáció finomítása admin küldési folyamattal
 - kilépés minden kliensen
 - mobilos auth képernyők bekötése ugyanarra a meghívásos folyamatra
