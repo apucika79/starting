@@ -22,6 +22,7 @@ export type AuthOldalMod = 'belepes' | 'regisztracio';
 
 type AuthOldalTulajdonsagok = {
   mod: AuthOldalMod;
+  kezdoJelszoResetMod?: boolean;
 };
 
 const szerepkorCimkek: Record<FelhasznaloiSzerepkor, string> = {
@@ -155,7 +156,7 @@ const recoveryTartalom = {
   ],
 };
 
-export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
+export function AuthOldal({ mod, kezdoJelszoResetMod = false }: AuthOldalTulajdonsagok) {
   const [ertekek, setErtekek] = useState<Record<string, string>>({
     email: '',
     jelszo: '',
@@ -191,6 +192,7 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
 
     const recoveryAllapot = recoveryAllapotAzUrlbol();
     setRecoveryMod(recoveryAllapot.aktiv);
+    setJelszoResetMod(kezdoJelszoResetMod && !recoveryAllapot.aktiv);
 
     if (recoveryAllapot.aktiv) {
       setJelszoResetMod(false);
@@ -206,7 +208,7 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
       setSikerUzenet('');
       torliAuthVisszateroParametereket();
     }
-  }, [mod]);
+  }, [kezdoJelszoResetMod, mod]);
 
   const aktualisMezok = useMemo(() => {
     if (recoveryMod) {
@@ -287,7 +289,7 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
         setSikerUzenet('Az új jelszó mentve. Néhány másodpercen belül megnyitjuk a belső felületet.');
         setRecoveryMod(false);
         window.setTimeout(() => {
-          navigalj('/fiok', { replace: true });
+          navigalj('/vezerlopult', { replace: true });
         }, 1200);
         return;
       } finally {
@@ -352,7 +354,7 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
         if (data.session) {
           setSikerUzenet('A regisztráció sikeres, a meghívó aktiválva lett. Betöltjük a védett fiókoldalt.');
           window.setTimeout(() => {
-            navigalj('/fiok', { replace: true });
+            navigalj('/vezerlopult', { replace: true });
           }, 1000);
           return;
         }
@@ -400,7 +402,7 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
         return;
       }
 
-      navigalj('/fiok', { replace: true });
+      navigalj('/vezerlopult', { replace: true });
     } finally {
       setBetoltes(false);
     }
@@ -420,6 +422,9 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
           <div className="flex flex-wrap gap-3">
             <NavigaciosLink className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/belepes">
               Belépés
+            </NavigaciosLink>
+            <NavigaciosLink className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/elfelejtett-jelszo">
+              Elfelejtett jelszó
             </NavigaciosLink>
             <NavigaciosLink className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/regisztracio">
               Regisztráció
