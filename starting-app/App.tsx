@@ -1,6 +1,7 @@
 // Ez a fájl a Starting mobilalkalmazás belépési pontja, és a kezdő bejelentkezési valamint főképernyős élményt jeleníti meg.
 import { SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
 import { BelepesiKezdokartya } from './src/komponensek/BelepesiKezdokartya';
+import { ErtesitesiKozpontKartya } from './src/komponensek/ErtesitesiKozpontKartya';
 import { FokepernyoAttekintes } from './src/kepernyok/FokepernyoAttekintes';
 
 export default function App() {
@@ -10,6 +11,7 @@ export default function App() {
       <View style={stilusok.tartalom}>
         <BelepesiKezdokartya />
         <FokepernyoAttekintes />
+        <ErtesitesiKozpontKartya />
       </View>
     </SafeAreaView>
   );

@@ -100,10 +100,20 @@ using (
   )
 );
 
-create policy "ertesites csak sajat"
+create policy "ertesites sajat vagy admin listabol"
 on public.ertesitesek
 for select
 using (
   public.aktualis_szerepkor() = 'szuperadmin'
   or profil_id = auth.uid()
+  or (
+    public.aktualis_szerepkor() = 'ceg_admin'
+    and ceg_id = public.aktualis_ceg_id()
+    and admin_listaban_megjelenik = true
+  )
+  or (
+    public.aktualis_szerepkor() = 'terulet_vezeto'
+    and terulet_id = public.aktualis_terulet_id()
+    and cel in ('terulet_vezeto', 'globalis_admin')
+  )
 );

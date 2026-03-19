@@ -55,3 +55,14 @@ Ez a modul az adminisztratív, HR, munkavédelmi vagy operatív események struk
 - **csatolmány kezelése** – dokumentum, kép vagy egyéb fájl is kapcsolható az eseményhez
 - **kapcsolódó dolgozó vagy terület** – az esemény összeköthető egy konkrét dolgozóval vagy szervezeti területtel
 - **admin láthatóság** – külön jelölhető, hogy az adott bejegyzés kizárólag adminisztratív körben legyen elérhető
+
+
+## 9. Értesítések alapstruktúrája
+
+Ez a modul az in-app értesítések első, később több csatornára bővíthető szerkezetét készíti elő.
+
+- **rendszerüzenetek** – rövid üzemi és platformszintű tájékoztatások egységes megjelenítéssel
+- **kötelező oktatás figyelmeztetés** – magasabb prioritású emlékeztetők új vagy határidős képzésekhez
+- **hiányzó napi belépés figyelmeztetés** – kritikus jelzés a napi munkakezdés hiányáról
+- **admin értesítési lista alap** – külön admin összesítő nézethez alkalmas szűrhető és priorizálható lista
+- **push értesítés későbbi helyének előkészítése** – a jelenlegi in-app struktúra mellett fenntartott csatorna a későbbi mobil push integrációhoz

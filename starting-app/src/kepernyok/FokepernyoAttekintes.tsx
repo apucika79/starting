@@ -15,8 +15,8 @@ const attekintoKartyak: AttekintoKartya[] = [
   },
   {
     cim: 'Értesítések',
-    ertek: 'Előkészített struktúra',
-    leiras: 'Később push és rendszerüzeneti bővítések fogadására kész.',
+    ertek: 'Külön modul',
+    leiras: 'Rendszerüzenet, oktatási figyelmeztetés, hiányzó belépés és admin lista alappal.',
   },
 ];
 

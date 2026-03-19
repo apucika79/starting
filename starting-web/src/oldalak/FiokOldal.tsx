@@ -4,8 +4,10 @@ import type { Session } from '@supabase/supabase-js';
 
 import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
 import { kilepes } from '@/szolgaltatasok/auth';
+import { ertesitesiAttekintesKeszitese, ertesitesekBetoltese } from '@/szolgaltatasok/ertesitesek';
 import { navigalj } from '@/segedek/navigacio';
 import { profilBetoltese } from '@/szolgaltatasok/profil';
+import type { Ertesites } from '@/tipusok/ertesites';
 import type { ProfilAdat } from '@/tipusok/profil';
 
 const szerepkorCimkek: Record<ProfilAdat['szerepkor'], string> = {
@@ -53,6 +55,20 @@ type FiokOldalTulajdonsagok = {
 type Allapot = 'betoltes' | 'siker' | 'hiba';
 type AlairasStatusz = 'várakozik' | 'elfogadva';
 
+const ertesitesTipusCimkek: Record<Ertesites['tipus'], string> = {
+  rendszeruzenet: 'Rendszerüzenet',
+  kotelezo_oktatas: 'Kötelező oktatás',
+  hianyzo_napi_belepes: 'Hiányzó napi belépés',
+  admin_osszefoglalo: 'Admin lista',
+};
+
+const prioritasCimkeOsztalyok: Record<Ertesites['prioritas'], string> = {
+  alacsony: 'border-slate-500/30 bg-slate-500/10 text-slate-200',
+  normal: 'border-sky-400/30 bg-sky-500/10 text-sky-100',
+  magas: 'border-amber-400/30 bg-amber-500/10 text-amber-100',
+  kritikus: 'border-rose-400/30 bg-rose-500/10 text-rose-100',
+};
+
 type StatuszNaplobejegyzes = {
   id: number;
   statusz: AlairasStatusz;
@@ -79,6 +95,7 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
   const [alairasStatusz, setAlairasStatusz] = useState<AlairasStatusz>('várakozik');
   const [alairasiIdobelyeg, setAlairasiIdobelyeg] = useState('');
   const [alairasiHiba, setAlairasiHiba] = useState('');
+  const [ertesitesek, setErtesitesek] = useState<Ertesites[]>([]);
   const [statuszNaplo, setStatuszNaplo] = useState<StatuszNaplobejegyzes[]>(() => [
     {
       id: Date.now(),
@@ -120,6 +137,11 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
     };
 
     void betolt();
+    void ertesitesekBetoltese().then((adatok) => {
+      if (aktiv) {
+        setErtesitesek(adatok);
+      }
+    });
 
     return () => {
       aktiv = false;
@@ -148,6 +170,8 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
 
   const sessionLejar = session.expires_at ? new Date(session.expires_at * 1000).toLocaleString('hu-HU') : 'Automatikusan kezelt';
   const nevEgyezik = megerositoNev.trim().toLocaleLowerCase('hu-HU') === megjelenitettNev.trim().toLocaleLowerCase('hu-HU');
+  const ertesitesiAttekintes = useMemo(() => ertesitesiAttekintesKeszitese(ertesitesek), [ertesitesek]);
+  const adminErtesitesek = useMemo(() => ertesitesek.filter((ertesites) => ertesites.adminListabanMegjelenik), [ertesitesek]);
 
   const rogzitAlairast = () => {
     if (!elfogadva) {
@@ -240,6 +264,102 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
                     <p className="mt-3 text-base font-semibold text-white">{adat.ertek}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-starting-primerVilagos">9. értesítések</p>
+                  <h2 className="mt-2 text-lg font-semibold text-white">Értesítési alapstruktúra</h2>
+                </div>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-slate-300">
+                  {ertesitesiAttekintes.osszesen} elem
+                </span>
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-4">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Összesen</p>
+                  <p className="mt-3 text-2xl font-semibold text-white">{ertesitesiAttekintes.osszesen}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Olvasatlan</p>
+                  <p className="mt-3 text-2xl font-semibold text-white">{ertesitesiAttekintes.olvasatlan}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Kritikus</p>
+                  <p className="mt-3 text-2xl font-semibold text-white">{ertesitesiAttekintes.kritikus}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Admin listában</p>
+                  <p className="mt-3 text-2xl font-semibold text-white">{ertesitesiAttekintes.adminListas}</p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                <div className="space-y-3">
+                  {ertesitesek.map((ertesites) => (
+                    <article key={ertesites.id} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-starting-primerVilagos">
+                            {ertesitesTipusCimkek[ertesites.tipus]}
+                          </p>
+                          <h3 className="mt-2 text-base font-semibold text-white">{ertesites.cim}</h3>
+                        </div>
+                        <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] ${prioritasCimkeOsztalyok[ertesites.prioritas]}`}>
+                          {ertesites.prioritas}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm leading-7 text-slate-300">{ertesites.uzenet}</p>
+                      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                        <span>Csatorna: {ertesites.csatorna}</span>
+                        <span>•</span>
+                        <span>{ertesites.letrehozva}</span>
+                        <span>•</span>
+                        <span>{ertesites.olvasott ? 'Olvasott' : 'Olvasatlan'}</span>
+                      </div>
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        {ertesites.akcioCimke && ertesites.akcioUrl ? (
+                          <a
+                            href={ertesites.akcioUrl}
+                            className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                          >
+                            {ertesites.akcioCimke}
+                          </a>
+                        ) : null}
+                        <span className="text-xs text-slate-400">
+                          {ertesites.pushHelyFenntartva ? 'Push hely előkészítve.' : 'Csak in-app megjelenítés.'}
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                    <h3 className="text-base font-semibold text-white">Admin értesítési lista alap</h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-300">
+                      Az admin nézet külön listát kap azokról az értesítésekről, amelyek szervezeti követést, utánkövetést vagy napi ellenőrzést igényelnek.
+                    </p>
+                    <ul className="mt-4 space-y-3">
+                      {adminErtesitesek.map((ertesites) => (
+                        <li key={ertesites.id} className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                          <p className="text-sm font-semibold text-white">{ertesites.cim}</p>
+                          <p className="mt-2 text-sm leading-7 text-slate-300">{ertesitesTipusCimkek[ertesites.tipus]}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="rounded-[1.5rem] border border-dashed border-starting-primer/30 bg-starting-primer/5 p-5">
+                    <h3 className="text-base font-semibold text-white">Push értesítés későbbi helye</h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-300">
+                      A struktúra elkülöníti a csatornát és a push-előkészítési állapotot, így a későbbi mobil push küldés külön migráció nélkül ráépíthető a mostani in-app értesítésekre.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
