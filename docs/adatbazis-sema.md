@@ -14,6 +14,7 @@
 - oktatasi_anyagok
 - oktatasi_teljesitesek
 - dokumentumok
+- dolgozo_dokumentumok
 - dokumentum_elfogadasok
 - esemenyek
 - ertesitesek
@@ -29,6 +30,35 @@
 
 A részletes induló SQL fájlok a `docs/supabase` mappában találhatók.
 
+
+
+## Dolgozók kezelése
+
+A `profilok`, `dolgozok`, `meghivok`, `dolgozo_dokumentumok` és `dokumentum_elfogadasok` együtt fedik le a dolgozói adminisztráció fő adatigényeit.
+
+### Kezelt mezők és műveletek
+
+- **név** – a `profilok.teljes_nev` mezőben tárolva
+- **email** – a `profilok.email` mezőben, egyedi értékként
+- **telefonszám** – a `profilok.telefonszam` mezőben
+- **pozíció** – a `dolgozok.pozicio` mezőben
+- **szerepkör** – a `profilok.szerepkor` mezőben
+- **állapot** – a `profilok.statusz` és `dolgozok.statusz` mezőkben, aktiválás / tiltás támogatásával
+- **cég** – a `profilok.ceg_id` és `dolgozok.ceg_id` kapcsolatokon keresztül
+- **telephely** – a `profilok.telephely_id` és `dolgozok.telephely_id` mezőkben
+- **terület** – a `profilok.terulet_id` és `dolgozok.terulet_id` mezőkben
+- **profilkép** – a `dolgozok.profilkep_url` mezőben, javasolt `profil-kepek` storage buckettel
+- **dokumentumok** – a dolgozóhoz feltöltött egyedi fájlok a `dolgozo_dokumentumok` táblában, a kötelező vállalati dokumentumok elfogadása pedig a `dokumentum_elfogadasok` táblában követhető
+- **meghívás küldése** – a `meghivok` tábla rögzíti a kiküldött meghívás címzettjét, szerepkörét, szervezeti hozzárendeléseit és státuszát
+- **aktiválás / tiltás** – a státuszmezők használatával a dolgozó rekordja inaktiválható anélkül, hogy a történeti adatok elvesznének
+
+### Javasolt működési szabályok
+
+- dolgozó létrehozásakor a meghívó már tartalmazza a cég, telephely, terület, szerepkör és opcionális pozíció előkészített adatait
+- a meghívó állapota legyen egyértelműen követhető: függőben, elfogadva, lejárt vagy visszavonva
+- inaktivált dolgozó ne tudjon új belépést kezdeményezni, de a korábbi jelenléti, oktatási és dokumentum-elfogadási adatok maradjanak elérhetők
+- a dolgozóhoz feltöltött dokumentumoknál érdemes megkülönböztetni az admin által feltöltött belső fájlokat és a dolgozó által aláírt / feltöltött mellékleteket
+- a profilkép és dokumentum feltöltések storage szabályai szervezeti szinten legyenek szűrhetők
 
 ## Telephelyek és területek kezelése
 
