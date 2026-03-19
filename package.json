@@ -1,0 +1,17 @@
+{
+  "name": "starting-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "starting-web",
+    "starting-app"
+  ],
+  "scripts": {
+    "telepit": "npm install --workspaces",
+    "indit:web": "npm run dev --workspace starting-web",
+    "indit:app": "npm run start --workspace starting-app",
+    "epit:web": "npm run build --workspace starting-web",
+    "ellenoriz:web": "npm run typecheck --workspace starting-web",
+    "ellenoriz:app": "npm run typecheck --workspace starting-app"
+  }
+}
