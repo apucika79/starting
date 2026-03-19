@@ -1,6 +1,6 @@
 # Starting
 
-A Starting egy modern, magyar nyelvű digitális munkakezdési, jelenléti, beléptetési, oktatási és adminisztrációs rendszer monorepo alapja.
+A Starting egy modern, magyar nyelvű digitális munkakezdési, jelenléti, beléptetési, oktatási, eseménykezelési és adminisztrációs rendszer monorepo alapja.
 
 ## Mappák
 

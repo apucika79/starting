@@ -43,3 +43,15 @@ Ez a modul a dolgozók kötelező és ajánlott oktatási anyagainak központi k
 - **elfogadási jelölés** – az anyagokhoz külön visszajelzés rögzíthető arról, hogy a dolgozó elolvasta vagy megismerte azokat
 - **digitális megerősítés** – a folyamat digitális jóváhagyással vagy megerősítő nyilatkozattal zárható le
 - **oktatási előrehaladás** – a dolgozók és adminisztrátorok számára is átlátható a képzések teljesítési állapota és előrehaladása
+
+## 8. Események és jegyzőkönyvek
+
+Ez a modul az adminisztratív, HR, munkavédelmi vagy operatív események strukturált rögzítését és visszakeresését támogatja.
+
+- **esemény rögzítése** – minden releváns történés önálló bejegyzésként menthető a rendszerben
+- **rövid leírás** – az eseményhez rövid, gyorsan átlátható összefoglaló tartozik
+- **kategória** – az események típus szerint csoportosíthatók, például incidens, jegyzőkönyv vagy adminisztratív feljegyzés formában
+- **dátum rögzítése** – minden esemény pontos eseménydátummal kerül naplózásra
+- **csatolmány kezelése** – dokumentum, kép vagy egyéb fájl is kapcsolható az eseményhez
+- **kapcsolódó dolgozó vagy terület** – az esemény összeköthető egy konkrét dolgozóval vagy szervezeti területtel
+- **admin láthatóság** – külön jelölhető, hogy az adott bejegyzés kizárólag adminisztratív körben legyen elérhető
