@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
+import { AdminAttekintoDashboard } from '@/komponensek/AdminAttekintoDashboard';
 import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
 import { RiportKozpont } from '@/komponensek/RiportKozpont';
 import { kilepes } from '@/szolgaltatasok/auth';
@@ -267,6 +268,8 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
                 ))}
               </div>
             </div>
+
+            <AdminAttekintoDashboard lathato={profil?.szerepkor !== 'dolgozo'} />
 
             <RiportKozpont />
 
