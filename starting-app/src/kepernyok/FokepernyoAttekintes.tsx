@@ -1,33 +1,46 @@
-// Ez a fájl a Starting mobil főképernyő induló áttekintő blokkjait jeleníti meg a későbbi modulok helyével együtt.
+// Ez a fájl a Starting mobil főképernyőjének kibővített áttekintését jeleníti meg a kért modulok rövid összefoglalójával.
 import { StyleSheet, Text, View } from 'react-native';
 import type { AttekintoKartya } from '../tipusok/fooldal';
 
 const attekintoKartyak: AttekintoKartya[] = [
   {
-    cim: 'Napi munkakezdés',
-    ertek: '1 érintéses indítás',
-    leiras: 'Gyors napi belépés és státuszrögzítés dolgozói használatra.',
+    cim: 'Bejelentkezés és profil',
+    ertek: 'SSO + biometria',
+    leiras: 'Gyors belépés, profiladatok és jogosultságok a napi munkakezdés előkészítéséhez.',
   },
   {
-    cim: 'Kötelező oktatások',
-    ertek: 'Web + mobil',
-    leiras: 'Előrehaladás, elfogadás és megtekintési állapot egy helyen.',
+    cim: 'Munkakezdés és jelenlétek',
+    ertek: 'Napi folyamat',
+    leiras: 'Egyetlen útvonalon rögzíthető a munkakezdés, majd visszanézhetők a jelenléti adatok.',
   },
   {
-    cim: 'Értesítések',
-    ertek: 'Külön modul',
-    leiras: 'Rendszerüzenet, oktatási figyelmeztetés, hiányzó belépés és admin lista alappal.',
+    cim: 'Oktatás és dokumentumok',
+    ertek: 'Kötelező modulok',
+    leiras: 'Tananyagok, tesztek és dokumentum-elfogadások egységes státuszkezeléssel.',
+  },
+  {
+    cim: 'Értesítések és beállítások',
+    ertek: 'Személyre szabható',
+    leiras: 'Push üzenetek, emlékeztetők és preferenciák ugyanabban az alkalmazásélményben.',
   },
 ];
 
 export function FokepernyoAttekintes() {
   return (
     <View style={stilusok.szakasz}>
-      <Text style={stilusok.felirat}>Főképernyő</Text>
-      <Text style={stilusok.cim}>Starting mobil áttekintés</Text>
+      <Text style={stilusok.felirat}>2. képernyő</Text>
+      <Text style={stilusok.cim}>Főképernyő: minden fontos modul egy közös mobil flow-ban</Text>
       <Text style={stilusok.leiras}>
-        Az alkalmazás szerkezete már most moduláris: külön helyet kapnak a képernyők, a szolgáltatások, a típusok és az állapotkezelés.
+        A főképernyő összefogja a munkakezdéshez szükséges gyorsműveleteket, a profil- és jelenléti állapotot,
+        valamint a kötelező feladatokat. Innen érhető el az összes újonnan beépített képernyő.
       </Text>
+
+      <View style={stilusok.kiemeltDoboz}>
+        <Text style={stilusok.kiemeltCim}>Kiemelt gyorsműveletek</Text>
+        <Text style={stilusok.kiemeltLeiras}>
+          Mai munkakezdés indítása, függőben lévő dokumentumok megnyitása, lejáró oktatások és új értesítések.
+        </Text>
+      </View>
 
       <View style={stilusok.racs}>
         {attekintoKartyak.map((kartya) => (
@@ -44,6 +57,11 @@ export function FokepernyoAttekintes() {
 
 const stilusok = StyleSheet.create({
   szakasz: {
+    borderRadius: 28,
+    padding: 20,
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.18)',
     gap: 12,
   },
   felirat: {
@@ -57,11 +75,32 @@ const stilusok = StyleSheet.create({
     color: '#ffffff',
     fontSize: 28,
     fontWeight: '700',
+    lineHeight: 36,
   },
   leiras: {
     color: '#cbd5e1',
     fontSize: 15,
     lineHeight: 24,
+  },
+  kiemeltDoboz: {
+    borderRadius: 22,
+    padding: 16,
+    backgroundColor: '#111827',
+    borderWidth: 1,
+    borderColor: 'rgba(45, 212, 191, 0.18)',
+    gap: 6,
+  },
+  kiemeltCim: {
+    color: '#99f6e4',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
+  },
+  kiemeltLeiras: {
+    color: '#e2e8f0',
+    fontSize: 14,
+    lineHeight: 22,
   },
   racs: {
     gap: 12,
