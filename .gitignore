@@ -9,4 +9,7 @@ dist
 .env.*.local
 coverage
 *.log
+*.tsbuildinfo
+starting-web/vite.config.js
+starting-web/vite.config.d.ts
 .DS_Store
