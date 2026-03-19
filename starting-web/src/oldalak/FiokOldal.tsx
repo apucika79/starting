@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
 import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
+import { RiportKozpont } from '@/komponensek/RiportKozpont';
 import { kilepes } from '@/szolgaltatasok/auth';
 import { ertesitesiAttekintesKeszitese, ertesitesekBetoltese } from '@/szolgaltatasok/ertesitesek';
 import { navigalj } from '@/segedek/navigacio';
@@ -266,6 +267,8 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
                 ))}
               </div>
             </div>
+
+            <RiportKozpont />
 
             <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
