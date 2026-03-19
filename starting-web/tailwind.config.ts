@@ -7,11 +7,13 @@ export default {
     extend: {
       colors: {
         starting: {
-          sotet: '#020617',
+          sotet: '#0f172a',
           primer: '#0f766e',
-          primerVilagos: '#14b8a6',
-          hamvas: '#cbd5e1',
-          kiemelt: '#38bdf8',
+          primerVilagos: '#0d9488',
+          hamvas: '#64748b',
+          kiemelt: '#e2e8f0',
+          felulet: '#f8fafc',
+          keret: '#cbd5e1',
         },
       },
       boxShadow: {
@@ -19,7 +21,7 @@ export default {
       },
       backgroundImage: {
         halo:
-          'radial-gradient(circle at top left, rgba(20,184,166,0.18), transparent 32%), radial-gradient(circle at top right, rgba(56,189,248,0.16), transparent 28%), linear-gradient(180deg, #020617 0%, #0f172a 100%)',
+          'radial-gradient(circle at top left, rgba(15,118,110,0.10), transparent 34%), radial-gradient(circle at top right, rgba(148,163,184,0.18), transparent 30%), linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
       },
     },
   },
