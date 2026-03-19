@@ -29,6 +29,24 @@
 
 A részletes induló SQL fájlok a `docs/supabase` mappában találhatók.
 
+
+## Telephelyek és területek kezelése
+
+A `telephelyek` és `teruletek` táblák a szervezeti felépítés alapját adják, ezért az adminfelületen érdemes a következő működést támogatni:
+
+- **telephely létrehozása és szerkesztése** – név, cím, kapcsolódó cég és státusz megadásával
+- **terület létrehozása és szerkesztése** – minden terület egy konkrét telephelyhez tartozzon
+- **dolgozók hozzárendelése** – a dolgozók egy kijelölt telephelyhez és opcionálisan területhez kapcsolhatók legyenek
+- **vezetők hozzárendelése** – a területvezetők egy vagy több területhez rendelhetők legyenek, hogy a jogosultságok pontosan szűrhetők maradjanak
+- **aktív / inaktív állapot kezelése** – telephely és terület szinten is legyen lehetőség státuszváltásra anélkül, hogy a korábbi adatok elvesznének
+
+### Javasolt működési szabályok
+
+- inaktiváláskor a meglévő historikus adatok maradjanak elérhetők riportálási és naplózási célból
+- új dolgozó vagy vezető csak aktív telephelyhez és aktív területhez legyen hozzárendelhető
+- terület csak a saját telephelyén belül legyen kiválasztható, hogy elkerülhető legyen a hibás kereszthozzárendelés
+- a vezetői hozzárendeléseket érdemes külön kapcsolótáblával kezelni, ha egy vezető több területért is felelhet
+
 ## Cégek kezelése
 
 A `cegek` tábla már elő van készítve a következő adatok tárolására:
