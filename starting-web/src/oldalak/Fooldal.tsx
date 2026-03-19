@@ -19,6 +19,10 @@ const foFunkciok: KiemeltKartya[] = [
     cim: 'Oktatás és megfelelés',
     leiras: 'Videók, dokumentumok, kötelező anyagok, teljesítési állapotok és naplózott visszaigazolások modern felületen.',
   },
+  {
+    cim: 'Események és jegyzőkönyvek',
+    leiras: 'Eseményrögzítés rövid leírással, kategóriával, dátummal, csatolmányokkal és admin láthatósági szabályokkal.',
+  },
 ];
 
 const elonyok: KiemeltKartya[] = [
@@ -118,7 +122,7 @@ export function Fooldal() {
             cim="Minden lényeges munkafolyamat egy helyen"
             leiras="A Starting célja, hogy a beléptetéstől az oktatáson át a napi státuszkezelésig egyetlen, könnyen kezelhető rendszerben dolgozhassanak a cégek."
           />
-          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {foFunkciok.map((funkcio, index) => (
               <TartalomKartya key={funkcio.cim} cim={funkcio.cim} leiras={funkcio.leiras}>
                 <span className="text-lg font-bold">0{index + 1}</span>
