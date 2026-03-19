@@ -28,16 +28,65 @@ const authKeszsegPontok = [
   'Védett oldalak automatikus átirányítással és perzisztens session-kezeléssel.',
 ];
 
+const digitalisNyilatkozatFejezetek = [
+  {
+    cim: 'Munkavégzési és adatkezelési nyilatkozat',
+    torzs:
+      'A dokumentum megerősíti, hogy a dolgozó megismerte a munkavégzéshez kapcsolódó digitális folyamatokat, az adatkezelési elveket és az előírt vállalati szabályokat.',
+  },
+  {
+    cim: 'Elfogadási feltételek',
+    torzs:
+      'Az elfogadással a felhasználó igazolja, hogy a tájékoztató tartalmát elolvasta, megértette, és a rendszerben rögzített névvel jóváhagyja a nyilatkozatot.',
+  },
+  {
+    cim: 'Audit és visszakereshetőség',
+    torzs:
+      'A rendszer az elfogadás időpontját, a megerősített nevet és a státuszváltozásokat naplózza, hogy a későbbi audit és ellenőrzés támogatott legyen.',
+  },
+];
+
 type FiokOldalTulajdonsagok = {
   session: Session;
 };
 
 type Allapot = 'betoltes' | 'siker' | 'hiba';
+type AlairasStatusz = 'várakozik' | 'elfogadva';
+
+type StatuszNaplobejegyzes = {
+  id: number;
+  statusz: AlairasStatusz;
+  leiras: string;
+  idobelyeg: string;
+};
+
+const formatalIdobelyeg = (datum: Date) =>
+  datum.toLocaleString('hu-HU', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 
 export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
   const [profil, setProfil] = useState<ProfilAdat | null>(null);
   const [allapot, setAllapot] = useState<Allapot>('betoltes');
   const [hibaUzenet, setHibaUzenet] = useState('');
+  const [elfogadva, setElfogadva] = useState(false);
+  const [megerositoNev, setMegerositoNev] = useState('');
+  const [alairasStatusz, setAlairasStatusz] = useState<AlairasStatusz>('várakozik');
+  const [alairasiIdobelyeg, setAlairasiIdobelyeg] = useState('');
+  const [alairasiHiba, setAlairasiHiba] = useState('');
+  const [statuszNaplo, setStatuszNaplo] = useState<StatuszNaplobejegyzes[]>(() => [
+    {
+      id: Date.now(),
+      statusz: 'várakozik',
+      leiras: 'A digitális nyilatkozat előkészítve, aláírásra vár.',
+      idobelyeg: formatalIdobelyeg(new Date()),
+    },
+  ]);
 
   useEffect(() => {
     let aktiv = true;
@@ -79,6 +128,13 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
 
   const email = session.user.email ?? 'ismeretlen felhasználó';
   const megjelenitettNev = profil?.teljes_nev ?? session.user.user_metadata.teljes_nev ?? 'Profil előkészítés alatt';
+
+  useEffect(() => {
+    if (!megerositoNev.trim() && megjelenitettNev !== 'Profil előkészítés alatt') {
+      setMegerositoNev(megjelenitettNev);
+    }
+  }, [megerositoNev, megjelenitettNev]);
+
   const szervezetiAdatok = useMemo(
     () => [
       { cimke: 'Szerepkör', ertek: profil ? szerepkorCimkek[profil.szerepkor] : 'Betöltés alatt' },
@@ -91,6 +147,39 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
   );
 
   const sessionLejar = session.expires_at ? new Date(session.expires_at * 1000).toLocaleString('hu-HU') : 'Automatikusan kezelt';
+  const nevEgyezik = megerositoNev.trim().toLocaleLowerCase('hu-HU') === megjelenitettNev.trim().toLocaleLowerCase('hu-HU');
+
+  const rogzitAlairast = () => {
+    if (!elfogadva) {
+      setAlairasiHiba('Az elfogadási jelölőnégyzetet be kell pipálnod a folytatáshoz.');
+      return;
+    }
+
+    if (!megerositoNev.trim()) {
+      setAlairasiHiba('Add meg a teljes nevedet a digitális megerősítéshez.');
+      return;
+    }
+
+    if (!nevEgyezik) {
+      setAlairasiHiba('A megadott névnek egyeznie kell a bejelentkezett felhasználó nevével.');
+      return;
+    }
+
+    const most = formatalIdobelyeg(new Date());
+
+    setAlairasStatusz('elfogadva');
+    setAlairasiIdobelyeg(most);
+    setAlairasiHiba('');
+    setStatuszNaplo((elozo) => [
+      {
+        id: Date.now(),
+        statusz: 'elfogadva',
+        leiras: `Digitális elfogadás rögzítve a következő névvel: ${megerositoNev.trim()}.`,
+        idobelyeg: most,
+      },
+      ...elozo,
+    ]);
+  };
 
   const kezeliKilepest = async () => {
     await kilepes();
@@ -151,6 +240,132 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
                     <p className="mt-3 text-base font-semibold text-white">{adat.ertek}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-starting-primerVilagos">7. digitális nyilatkozat / aláírás</p>
+                  <h2 className="mt-2 text-lg font-semibold text-white">Dokumentummegjelenítés és digitális elfogadás</h2>
+                </div>
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] ${
+                    alairasStatusz === 'elfogadva'
+                      ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200'
+                      : 'border-amber-400/30 bg-amber-500/10 text-amber-100'
+                  }`}
+                >
+                  {alairasStatusz}
+                </span>
+              </div>
+
+              <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Nyilatkozat dokumentum</p>
+                    <p className="mt-1 text-sm text-slate-400">Megjeleníthető, görgethető tartalom auditált elfogadáshoz.</p>
+                  </div>
+                  <span className="rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-slate-300">
+                    3 fejezet
+                  </span>
+                </div>
+
+                <div className="mt-4 max-h-72 space-y-4 overflow-y-auto pr-2">
+                  {digitalisNyilatkozatFejezetek.map((fejezet, index) => (
+                    <article key={fejezet.cim} className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-starting-primerVilagos">Fejezet {index + 1}</p>
+                      <h3 className="mt-2 text-base font-semibold text-white">{fejezet.cim}</h3>
+                      <p className="mt-3 text-sm leading-7 text-slate-300">{fejezet.torzs}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                <div className="space-y-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                  <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-7 text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={elfogadva}
+                      onChange={(event) => setElfogadva(event.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-900 text-starting-primer focus:ring-starting-primer"
+                    />
+                    <span>Elfogadom a dokumentumban szereplő nyilatkozatot, és vállalom, hogy a rendszer az elfogadás tényét naplózza.</span>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-medium text-slate-200">Megerősítés teljes névvel</span>
+                    <input
+                      type="text"
+                      value={megerositoNev}
+                      onChange={(event) => setMegerositoNev(event.target.value)}
+                      placeholder="Írd be a teljes neved"
+                      className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-starting-primer"
+                    />
+                  </label>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Időbélyeg</p>
+                      <p className="mt-3 text-sm font-semibold text-white">{alairasiIdobelyeg || 'Még nincs rögzítve'}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Név egyezése</p>
+                      <p className={`mt-3 text-sm font-semibold ${nevEgyezik ? 'text-emerald-300' : 'text-amber-200'}`}>
+                        {nevEgyezik ? 'Ellenőrizve' : 'Eltérés vagy hiányzó név'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {alairasiHiba ? (
+                    <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm leading-7 text-rose-100">{alairasiHiba}</div>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    onClick={rogzitAlairast}
+                    className="inline-flex w-full items-center justify-center rounded-full bg-starting-primer px-6 py-3.5 text-base font-semibold text-white transition hover:bg-starting-primerVilagos"
+                  >
+                    Nyilatkozat digitális elfogadása
+                  </button>
+                </div>
+
+                <div className="space-y-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                  <div className="rounded-2xl border border-dashed border-white/15 bg-slate-950/60 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Rajzolt aláírás helye</p>
+                    <div className="mt-4 flex min-h-36 items-center justify-center rounded-2xl border border-dashed border-starting-primer/30 bg-starting-primer/5 px-4 text-center text-sm leading-7 text-slate-300">
+                      Későbbi iterációhoz előkészített hely a rajzolt vagy érintőképernyős aláírásmező számára.
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-base font-semibold text-white">Aláírás státusznapló</h3>
+                      <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">{statuszNaplo.length} bejegyzés</span>
+                    </div>
+
+                    <ol className="mt-4 space-y-3">
+                      {statuszNaplo.map((bejegyzes) => (
+                        <li key={bejegyzes.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span
+                              className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] ${
+                                bejegyzes.statusz === 'elfogadva'
+                                  ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200'
+                                  : 'border-amber-400/30 bg-amber-500/10 text-amber-100'
+                              }`}
+                            >
+                              {bejegyzes.statusz}
+                            </span>
+                            <span className="text-xs text-slate-400">{bejegyzes.idobelyeg}</span>
+                          </div>
+                          <p className="mt-3 text-sm leading-7 text-slate-300">{bejegyzes.leiras}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
