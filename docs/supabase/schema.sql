@@ -4,6 +4,11 @@ create extension if not exists pgcrypto;
 create type public.felhasznaloi_szerepkor as enum ('szuperadmin', 'ceg_admin', 'terulet_vezeto', 'dolgozo');
 create type public.altalanos_statusz as enum ('aktiv', 'inaktiv', 'torolt');
 create type public.meghivo_statusz as enum ('fuggoben', 'elfogadva', 'lejart', 'visszavonva');
+create type public.ertesites_tipus as enum ('rendszeruzenet', 'kotelezo_oktatas', 'hianyzo_napi_belepes', 'admin_osszefoglalo');
+create type public.ertesites_prioritas as enum ('alacsony', 'normal', 'magas', 'kritikus');
+create type public.ertesites_allapot as enum ('uj', 'kikuldve', 'olvasott', 'archivalt');
+create type public.ertesites_cel as enum ('profil', 'ceg_admin', 'terulet_vezeto', 'globalis_admin');
+create type public.ertesites_csatorna as enum ('alkalmazason_belul', 'email', 'push_elokeszitve');
 
 create table if not exists public.cegek (
   id uuid primary key default gen_random_uuid(),
@@ -198,13 +203,31 @@ create table if not exists public.esemenyek (
 
 create table if not exists public.ertesitesek (
   id uuid primary key default gen_random_uuid(),
-  profil_id uuid not null references public.profilok(id),
+  profil_id uuid references public.profilok(id),
+  ceg_id uuid references public.cegek(id),
+  terulet_id uuid references public.teruletek(id),
+  cel public.ertesites_cel not null default 'profil',
   cim text not null,
   uzenet text not null,
-  tipus text not null,
+  tipus public.ertesites_tipus not null,
+  prioritas public.ertesites_prioritas not null default 'normal',
+  allapot public.ertesites_allapot not null default 'uj',
   olvasott boolean not null default false,
-  kuldes_csatorna text not null default 'alkalmazason_belul',
-  letrehozva timestamp with time zone not null default now()
+  olvasva_at timestamp with time zone,
+  admin_listaban_megjelenik boolean not null default false,
+  csoportositas_kulcs text,
+  forras_tipus text,
+  forras_azonosito uuid,
+  akcio_url text,
+  metaadat jsonb not null default '{}'::jsonb,
+  kuldes_csatorna public.ertesites_csatorna not null default 'alkalmazason_belul',
+  push_elokeszitve boolean not null default false,
+  push_token text,
+  push_elokeszitve_at timestamp with time zone,
+  push_kuldve_at timestamp with time zone,
+  letrehozva timestamp with time zone not null default now(),
+  frissitve timestamp with time zone not null default now(),
+  check (profil_id is not null or cel <> 'profil')
 );
 
 create table if not exists public.rendszer_naplok (
@@ -227,6 +250,9 @@ create index if not exists idx_meghivok_ceg_id on public.meghivok (ceg_id);
 create index if not exists idx_meghivok_statusz on public.meghivok (statusz);
 create index if not exists idx_jelenleti_naplok_dolgozo_id on public.jelenleti_naplok (dolgozo_id);
 create index if not exists idx_ertesitesek_profil_id on public.ertesitesek (profil_id);
+create index if not exists idx_ertesitesek_allapot_letrehozva on public.ertesitesek (allapot, letrehozva desc);
+create index if not exists idx_ertesitesek_admin_lista on public.ertesitesek (admin_listaban_megjelenik, prioritas, letrehozva desc);
+create index if not exists idx_ertesitesek_tipus_cel on public.ertesitesek (tipus, cel);
 
 create or replace function public.profil_letrehozasa_meghivobol()
 returns trigger

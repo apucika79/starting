@@ -121,3 +121,31 @@ A `cegek` tábla már elő van készítve a következő adatok tárolására:
 - a `kapcsolattarto_email` mezőt érdemes a későbbi admin meghívási folyamathoz használni
 - a `logo_url` a `ceg-logok` storage buckethez illeszthető
 - az `elofizetesi_csomag` jelenleg szabad szövegként van előkészítve, de később enumra vagy külön előfizetés táblára bontható
+
+
+## Értesítések alapstruktúrája
+
+Az `ertesitesek` tábla most már nem csak egy egyszerű in-app üzenetlista, hanem a későbbi többcsatornás értesítési modul alapja.
+
+### Kezelt értesítéstípusok
+
+- **rendszerüzenetek** – általános rendszer- és működési tájékoztatások
+- **kötelező oktatás figyelmeztetés** – új vagy lejáratközeli kötelező anyagokhoz kapcsolódó emlékeztetők
+- **hiányzó napi belépés figyelmeztetés** – munkakezdési napló hiánya esetén küldhető sürgős jelzés
+- **admin értesítési lista alap** – admin követési listába emelhető tételek egységes tárolása
+- **push értesítés későbbi helye** – előkészített push mezők a későbbi mobilküldéshez
+
+### Javasolt működési szabályok
+
+- a `tipus`, `prioritas`, `allapot` és `cel` enum mezők segítsék a konzisztens lekérdezést és a stabil kliensoldali megjelenítést
+- a `profil_id` maradjon opcionális azoknál az admin vagy szerepkör alapú értesítéseknél, amelyek még nem egyetlen felhasználóhoz kötődnek
+- az `admin_listaban_megjelenik` mező különítse el az admin összesítő nézetet a dolgozói in-app listától
+- a `forras_tipus` és `forras_azonosito` mezők tegyék visszakövethetővé, hogy egy figyelmeztetés oktatásból, jelenlétből vagy rendszereseményből származik-e
+- a `metaadat` JSON mezőben lehessen később határidőt, badge számot, küldési szabályt vagy extra kliensoldali navigációs információt tárolni
+- a `push_elokeszitve`, `push_token`, `push_elokeszitve_at` és `push_kuldve_at` mezők most még csak előkészítik a mobil push logikát, de később új tábla nélkül is ráépíthető rá az ütemezett küldés
+
+### Hatékonysági megfontolások
+
+- külön indexek készüljenek az állapot + létrehozási idő szerinti lekérdezésekhez, mert az olvasatlan és legfrissebb lista ezeket gyakran használja
+- az admin lista saját indexet kapjon, hogy a napi admin összesítő nézet nagyobb adatmennyiségnél is gyors maradjon
+- a típus + cél kombináció indexelése segíti az olyan háttérfolyamatokat, amelyek például csak a hiányzó napi belépés figyelmeztetéseket vagy csak az admin célcsoportú elemeket gyűjtik ki
