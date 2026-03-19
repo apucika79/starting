@@ -25,6 +25,19 @@ const attekintoKartyak: AttekintoKartya[] = [
   },
 ];
 
+const maiMunkanapLepesek = [
+  { cim: 'Telephely megerősítve', allapot: 'Automatikus', leiras: 'A dolgozó a kijelölt telephelyhez vagy munkaterülethez kapcsolódik.' },
+  { cim: 'Munkakezdés rögzítése', allapot: 'Elsődleges', leiras: 'A fő CTA egyetlen érintéssel indítható napi belépési folyamatot jelöl.' },
+  { cim: 'Védőeszköz / nyilatkozat', allapot: 'Kötelező', leiras: 'A napi admin ellenőrzések rövid listában jelennek meg indulás előtt.' },
+  { cim: 'Napközbeni visszanézés', allapot: 'Átlátható', leiras: 'A dolgozó később is visszaláthatja a rögzített státuszt és eseményeket.' },
+];
+
+const nyitottTetelKartyak = [
+  { cim: 'Mai teendők', ertek: '3 db', leiras: 'Munkakezdés, egy kötelező oktatás és 1 dokumentum vár jóváhagyásra.' },
+  { cim: 'Utolsó szinkron', ertek: '08:12', leiras: 'A mobilapp friss állapotot mutat a vezetői háttérrendszerrel.' },
+  { cim: 'Kiemelt riasztás', ertek: '1 kritikus', leiras: 'Hiányzó napi belépés esetén azonnali figyelmeztetés küldhető.' },
+];
+
 export function FokepernyoAttekintes() {
   return (
     <View style={stilusok.szakasz}>
@@ -36,10 +49,39 @@ export function FokepernyoAttekintes() {
       </Text>
 
       <View style={stilusok.kiemeltDoboz}>
-        <Text style={stilusok.kiemeltCim}>Kiemelt gyorsműveletek</Text>
+        <Text style={stilusok.kiemeltCim}>Mai munkanap fókusz</Text>
         <Text style={stilusok.kiemeltLeiras}>
-          Mai munkakezdés indítása, függőben lévő dokumentumok megnyitása, lejáró oktatások és új értesítések.
+          A képernyő elsődleges feladata, hogy néhány másodperc alatt elindíthatóvá tegye a napi belépést, és közben megmutassa a kötelező
+          oktatásokat, dokumentumokat és figyelmeztetéseket.
         </Text>
+      </View>
+
+      <View style={stilusok.informaciosRacs}>
+        {nyitottTetelKartyak.map((kartya) => (
+          <View key={kartya.cim} style={stilusok.informaciosKartya}>
+            <Text style={stilusok.informaciosCim}>{kartya.cim}</Text>
+            <Text style={stilusok.informaciosErtek}>{kartya.ertek}</Text>
+            <Text style={stilusok.informaciosLeiras}>{kartya.leiras}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={stilusok.folyamatDoboz}>
+        <Text style={stilusok.folyamatCim}>Munkakezdési folyamat egy képernyőn</Text>
+        {maiMunkanapLepesek.map((lepes, index) => (
+          <View key={lepes.cim} style={stilusok.folyamatSor}>
+            <View style={stilusok.folyamatSorszamKor}>
+              <Text style={stilusok.folyamatSorszam}>{index + 1}</Text>
+            </View>
+            <View style={stilusok.folyamatTartalom}>
+              <View style={stilusok.folyamatFejlec}>
+                <Text style={stilusok.folyamatTetelCim}>{lepes.cim}</Text>
+                <Text style={stilusok.folyamatAllapot}>{lepes.allapot}</Text>
+              </View>
+              <Text style={stilusok.folyamatLeiras}>{lepes.leiras}</Text>
+            </View>
+          </View>
+        ))}
       </View>
 
       <View style={stilusok.racs}>
@@ -101,6 +143,91 @@ const stilusok = StyleSheet.create({
     color: '#e2e8f0',
     fontSize: 14,
     lineHeight: 22,
+  },
+  informaciosRacs: {
+    gap: 10,
+  },
+  informaciosKartya: {
+    borderRadius: 20,
+    padding: 16,
+    backgroundColor: '#111827',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.16)',
+    gap: 6,
+  },
+  informaciosCim: {
+    color: '#cbd5e1',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  informaciosErtek: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  informaciosLeiras: {
+    color: '#94a3b8',
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  folyamatDoboz: {
+    borderRadius: 22,
+    padding: 16,
+    backgroundColor: 'rgba(15, 23, 42, 0.82)',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.12)',
+    gap: 12,
+  },
+  folyamatCim: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  folyamatSor: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  folyamatSorszamKor: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(20, 184, 166, 0.16)',
+    marginTop: 2,
+  },
+  folyamatSorszam: {
+    color: '#99f6e4',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  folyamatTartalom: {
+    flex: 1,
+    gap: 4,
+  },
+  folyamatFejlec: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+  },
+  folyamatTetelCim: {
+    flex: 1,
+    color: '#e2e8f0',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  folyamatAllapot: {
+    color: '#2dd4bf',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  folyamatLeiras: {
+    color: '#94a3b8',
+    fontSize: 13,
+    lineHeight: 20,
   },
   racs: {
     gap: 12,

@@ -1,4 +1,6 @@
 // Ez a fájl a Starting nyilvános landing oldalát jeleníti meg erős üzleti értékajánlattal, moduláttekintéssel és CTA blokkokkal.
+import { useMemo, useState } from 'react';
+
 import { MarkaJelveny } from '@/komponensek/MarkaJelveny';
 import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
 import { SzakaszCim } from '@/komponensek/SzakaszCim';
@@ -70,7 +72,94 @@ const designElvarasok = [
   'Professzionális, megbízható és tiszta színvilág túlzó látványelemek nélkül.',
 ];
 
+const megvalositasTeruletek = [
+  {
+    cim: 'Beléptetés és jogosultság',
+    leiras: 'Meghívásos regisztráció, valós auth és védett route-ok a napi belépés biztos alapjához.',
+    ruta: '/belepes',
+    cimke: 'Auth készenlét',
+  },
+  {
+    cim: 'Napi munkakezdés és jelenlét',
+    leiras: 'A dolgozói bejelentkezés, státuszrögzítés és visszakereshető jelenléti napló egy közös folyamattá szervezhető.',
+    ruta: '/jelenlet',
+    cimke: 'Operatív fókusz',
+  },
+  {
+    cim: 'Oktatás és dokumentum-elfogadás',
+    leiras: 'Kötelező anyagok, digitális nyilatkozatok és auditálható elfogadások egy összefüggő modulrendszerben.',
+    ruta: '/oktatasok',
+    cimke: 'Compliance',
+  },
+  {
+    cim: 'Riportok és vezetői kontroll',
+    leiras: 'Az admin oldalra épített riportközpont a napi hiányosságok, késések és kötelező feladatok áttekintését támogatja.',
+    ruta: '/admin',
+    cimke: 'Vezetői nézet',
+  },
+];
+
+const keszenletiSzintek = [
+  {
+    terulet: 'Webes értékesítési / landing élmény',
+    allapot: 'Erős alap',
+    leiras: 'Nyilvános főoldal, üzleti pozicionálás, CTA-k és route-olt információs oldalak elkészítve.',
+  },
+  {
+    terulet: 'Belépés utáni webes működés',
+    allapot: 'Működő váz',
+    leiras: 'Auth, profilbetöltés, admin dashboard és riportközpont már valós rendszerlogikához közelít.',
+  },
+  {
+    terulet: 'Mobil dolgozói élmény',
+    allapot: 'Termékdemó kész',
+    leiras: 'A fő mobil képernyők tartalmilag már lefedik a napi munkakezdés, oktatás és értesítés folyamatait.',
+  },
+  {
+    terulet: 'Bevezetési következő lépés',
+    allapot: 'Kapcsolat + pilot',
+    leiras: 'A landing oldalon már rögzíthető az érdeklődő cég alapadata, így kijelölhető egy demo vagy pilot egyeztetés.',
+  },
+];
+
 export function Fooldal() {
+  const [kapcsolat, setKapcsolat] = useState({
+    nev: '',
+    email: '',
+    ceg: '',
+    letszam: '',
+    uzenet: '',
+  });
+  const [sikeresKuldes, setSikeresKuldes] = useState(false);
+  const [hibaUzenet, setHibaUzenet] = useState('');
+
+  const kitoltottMezokSzama = useMemo(
+    () => Object.values(kapcsolat).filter((ertek) => ertek.trim().length > 0).length,
+    [kapcsolat],
+  );
+
+  const kezeliValtozast = (mezo: keyof typeof kapcsolat, ertek: string) => {
+    setKapcsolat((elozo) => ({
+      ...elozo,
+      [mezo]: ertek,
+    }));
+    setSikeresKuldes(false);
+    setHibaUzenet('');
+  };
+
+  const kezeliKuldes = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!kapcsolat.nev.trim() || !kapcsolat.email.trim() || !kapcsolat.ceg.trim()) {
+      setHibaUzenet('A név, email és cégnév mezők kitöltése szükséges az érdeklődés rögzítéséhez.');
+      setSikeresKuldes(false);
+      return;
+    }
+
+    setHibaUzenet('');
+    setSikeresKuldes(true);
+  };
+
   return (
     <main className="min-h-screen bg-halo text-starting-sotet">
       <section className="mx-auto max-w-7xl px-6 pb-24 pt-6 sm:px-8 lg:px-10">
@@ -82,6 +171,9 @@ export function Fooldal() {
             </a>
             <a className="rounded-full px-5 py-3 transition hover:bg-slate-100" href="#vezetoknek">
               Vezetőknek
+            </a>
+            <a className="rounded-full px-5 py-3 transition hover:bg-slate-100" href="#alkalmassag">
+              Alkalmasság
             </a>
             <a className="rounded-full px-5 py-3 transition hover:bg-slate-100" href="#kapcsolat">
               Kapcsolat
@@ -118,7 +210,7 @@ export function Fooldal() {
                 className="inline-flex min-h-14 items-center justify-center rounded-full border border-starting-keret bg-white px-7 py-4 text-base font-semibold text-starting-sotet transition hover:bg-slate-50"
                 href="#kapcsolat"
               >
-                Érdeklődés előkészítése
+                Demo egyeztetés
               </a>
             </div>
             <ul className="mt-8 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
@@ -188,7 +280,7 @@ export function Fooldal() {
       </section>
 
       <section className="border-y border-starting-keret/70 bg-slate-50/80 px-6 py-20 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.35em] text-starting-primer">Web + app</p>
             <h2 className="mt-4 text-3xl font-semibold text-starting-sotet sm:text-4xl">Kiemelten kommunikálja, hogy a rendszer nem csak webes admin felület.</h2>
@@ -208,29 +300,158 @@ export function Fooldal() {
         </div>
       </section>
 
-      <section id="kapcsolat" className="px-6 py-20 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl rounded-[2rem] border border-starting-keret/70 bg-white p-8 shadow-kartya sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
-          <div>
+      <section id="alkalmassag" className="px-6 py-20 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl">
+          <SzakaszCim
+            felirat="Feladatra alkalmasság"
+            cim="A web és az app is ugyanarra a konkrét működési problémára van hangolva"
+            leiras="A felület már nem csak általános bemutató, hanem egyértelműen a munkakezdés, jelenlét, oktatás, dokumentum-elfogadás és vezetői utánkövetés közös rendszerét kommunikálja."
+          />
+
+          <div className="mt-12 grid gap-6 xl:grid-cols-4">
+            {megvalositasTeruletek.map((terulet) => (
+              <article key={terulet.cim} className="rounded-[1.75rem] border border-starting-keret/70 bg-white p-6 shadow-kartya">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-starting-primer">{terulet.cimke}</p>
+                <h3 className="mt-3 text-xl font-semibold text-starting-sotet">{terulet.cim}</h3>
+                <p className="mt-4 text-sm leading-7 text-slate-600">{terulet.leiras}</p>
+                <NavigaciosLink
+                  className="mt-6 inline-flex items-center justify-center rounded-full border border-starting-keret px-4 py-3 text-sm font-semibold text-starting-sotet transition hover:bg-slate-50"
+                  href={terulet.ruta}
+                >
+                  Modul megnyitása
+                </NavigaciosLink>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-[2rem] border border-starting-primer/15 bg-starting-primer/5 p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-starting-primer">Mit lát egy döntéshozó?</p>
+              <h3 className="mt-4 text-2xl font-semibold text-starting-sotet">Készültségi térkép a bevezetési beszélgetéshez</h3>
+              <div className="mt-6 space-y-4">
+                {keszenletiSzintek.map((szint) => (
+                  <div key={szint.terulet} className="rounded-2xl border border-starting-keret/70 bg-white/90 p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h4 className="text-base font-semibold text-starting-sotet">{szint.terulet}</h4>
+                      <span className="rounded-full bg-starting-primer/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-starting-primer">
+                        {szint.allapot}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">{szint.leiras}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-starting-keret/70 bg-slate-950 p-8 text-white shadow-kartya">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-starting-primerVilagos">Mi hiányzik a következő lépéshez?</p>
+              <h3 className="mt-4 text-2xl font-semibold">Pilot adatok, szervezeti döntések és célzott backend bekötés</h3>
+              <ul className="mt-6 space-y-4 text-sm leading-7 text-slate-300">
+                <li>• céges és telephely struktúra véglegesítése</li>
+                <li>• meghívásos onboarding és profil trigger élesítése</li>
+                <li>• jelenléti és oktatási adatok Supabase táblákhoz kötése</li>
+                <li>• értesítési és riport szabályok pilot céges adatokkal finomhangolása</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="kapcsolat" className="border-t border-starting-keret/70 px-6 py-20 sm:px-8 lg:px-10">
+        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-[2rem] border border-starting-keret/70 bg-white p-8 shadow-kartya">
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-starting-primer">Kapcsolat / érdeklődés</p>
-            <h2 className="mt-3 text-3xl font-semibold text-starting-sotet sm:text-4xl">A kapcsolatfelvétel helye is elő van készítve a következő iterációhoz.</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-starting-sotet sm:text-4xl">Az érdeklődés rögzítése már konkrét pilot beszélgetésre van hangolva.</h2>
             <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-              A landing oldal már alkalmas arra, hogy ide kerüljön ajánlatkérés, demo igénylés vagy közvetlen üzleti kapcsolatfelvétel. Addig is a CTA-k és a
-              blokkstruktúra egyértelműen kijelölik ennek a helyét.
+              A landing oldal most már nem csak helyet tart fenn a kapcsolatfelvételnek, hanem összegyűjti azokat az alapinformációkat is, amelyek egy demo,
+              bevezetési workshop vagy pilot egyeztetés előkészítéséhez szükségesek.
             </p>
             <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-600">
               {kapcsolatLepesek.map((lepespont) => (
                 <li key={lepespont}>• {lepespont}</li>
               ))}
             </ul>
+            <div className="mt-8 rounded-[1.5rem] border border-starting-primer/15 bg-starting-primer/5 p-5">
+              <p className="text-sm font-semibold text-starting-sotet">Űrlap előrehaladás</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {kitoltottMezokSzama}/5 mező kitöltve. A minimális demo-egyeztetéshez név, email és cégnév szükséges.
+              </p>
+            </div>
           </div>
-          <div className="mt-8 flex flex-col gap-4 sm:flex-row lg:mt-0 lg:flex-col">
-            <a className="inline-flex min-h-14 items-center justify-center rounded-full bg-starting-primer px-6 py-4 font-semibold text-white transition hover:bg-starting-primerVilagos" href="mailto:hello@starting.hu">
-              Kapcsolat előkészítve
-            </a>
-            <NavigaciosLink className="inline-flex min-h-14 items-center justify-center rounded-full border border-starting-keret px-6 py-4 font-semibold text-starting-sotet transition hover:bg-slate-50" href="/belepes">
-              Belépés a rendszerbe
-            </NavigaciosLink>
-          </div>
+
+          <form className="rounded-[2rem] border border-starting-keret/70 bg-white p-8 shadow-kartya" onSubmit={kezeliKuldes}>
+            {hibaUzenet ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{hibaUzenet}</div> : null}
+            {sikeresKuldes ? (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                Érdeklődés rögzítve a felületen. A következő iterációban ez a blokk közvetlen CRM vagy email workflow-ra is köthető.
+              </div>
+            ) : null}
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-slate-700">Kapcsolattartó neve</span>
+                <input
+                  className="w-full rounded-2xl border border-starting-keret bg-starting-felulet px-4 py-3 outline-none transition focus:border-starting-primer"
+                  placeholder="Minta Márton"
+                  value={kapcsolat.nev}
+                  onChange={(event) => kezeliValtozast('nev', event.target.value)}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-slate-700">Munkahelyi email</span>
+                <input
+                  className="w-full rounded-2xl border border-starting-keret bg-starting-felulet px-4 py-3 outline-none transition focus:border-starting-primer"
+                  placeholder="vezeto@ceg.hu"
+                  type="email"
+                  value={kapcsolat.email}
+                  onChange={(event) => kezeliValtozast('email', event.target.value)}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-slate-700">Cégnév</span>
+                <input
+                  className="w-full rounded-2xl border border-starting-keret bg-starting-felulet px-4 py-3 outline-none transition focus:border-starting-primer"
+                  placeholder="Starting Mintacég Kft."
+                  value={kapcsolat.ceg}
+                  onChange={(event) => kezeliValtozast('ceg', event.target.value)}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-slate-700">Dolgozói létszám</span>
+                <input
+                  className="w-full rounded-2xl border border-starting-keret bg-starting-felulet px-4 py-3 outline-none transition focus:border-starting-primer"
+                  placeholder="50-120 fő"
+                  value={kapcsolat.letszam}
+                  onChange={(event) => kezeliValtozast('letszam', event.target.value)}
+                />
+              </label>
+            </div>
+
+            <label className="mt-4 block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">Melyik területre keresnek megoldást?</span>
+              <textarea
+                className="min-h-36 w-full rounded-2xl border border-starting-keret bg-starting-felulet px-4 py-3 outline-none transition focus:border-starting-primer"
+                placeholder="Pl. meghívásos beléptetés, napi jelenlét, kötelező oktatások, dokumentum-elfogadás, vezetői riportok..."
+                value={kapcsolat.uzenet}
+                onChange={(event) => kezeliValtozast('uzenet', event.target.value)}
+              />
+            </label>
+
+            <div className="mt-6 flex flex-col gap-4 sm:flex-row">
+              <button
+                className="inline-flex min-h-14 items-center justify-center rounded-full bg-starting-primer px-6 py-4 font-semibold text-white transition hover:bg-starting-primerVilagos"
+                type="submit"
+              >
+                Demo igény rögzítése
+              </button>
+              <a
+                className="inline-flex min-h-14 items-center justify-center rounded-full border border-starting-keret px-6 py-4 font-semibold text-starting-sotet transition hover:bg-slate-50"
+                href="mailto:hello@starting.hu"
+              >
+                Közvetlen email
+              </a>
+            </div>
+          </form>
         </div>
       </section>
 
