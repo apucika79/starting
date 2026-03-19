@@ -12,9 +12,19 @@
 
 Minden felhasználó csak a saját szerepkörének és szervezeti kapcsolatainak megfelelő adatot láthatja.
 
-## Induló szabályok
+## Szigorú láthatósági szabályok
 
-- a dolgozó csak a saját profilját, jelenléteit, oktatásait és dokumentumelfogadásait láthatja
-- a területvezető csak a hozzá rendelt területekhez kapcsolódó adatokhoz férhet hozzá
-- a cégadmin csak a saját cégéhez tartozó elemeket kezelheti
-- a szuperadmin minden szervezeti adathoz hozzáférhet
+- a `dolgozo` csak a saját profilját, saját dolgozói rekordját, saját jelenléteit, saját oktatási teljesítéseit, saját dokumentumait, saját dokumentumelfogadásait és a neki címzett értesítéseket láthatja
+- a `dolgozo` a saját telephelyéhez és területéhez tartozó törzsadatokat láthatja, de más dolgozók személyes adataihoz nem férhet hozzá
+- a `terulet_vezeto` csak a saját területéhez tartozó profilokat, dolgozókat, jelenléteket, teljesítéseket, dokumentumokat, meghívókat és admin értesítéseket láthatja
+- a `terulet_vezeto` csak a saját telephelye és területe törzsadatait láthatja, más területekhez és más cégekhez nem férhet hozzá
+- a `ceg_admin` csak a saját cégéhez tartozó szervezeti adatokat, dolgozókat, jelenléteket, dokumentumokat, meghívókat, értesítéseket és naplókat láthatja
+- a `szuperadmin` minden szervezeti adathoz hozzáférhet
+- a rendszer globális, nem személyes törzsadatai közül a napi státuszok minden hitelesített felhasználó számára olvashatók
+
+## RLS tervezési elvek
+
+- minden érintett táblán kötelező a Row Level Security, és a `force row level security` is be van kapcsolva
+- ahol érzékeny adatok vannak, a láthatóság mindig a bejelentkezett felhasználó `profilok` rekordjában tárolt szerepkör, cég, telephely és terület alapján dől el
+- a céges és területi adminisztratív nézetek nem nyithatnak hozzáférést más szervezeti egységek adataihoz
+- a dolgozói nézetek alapértelmezésben önkiszolgálóak: a felhasználó csak a saját rekordjaihoz fér hozzá
