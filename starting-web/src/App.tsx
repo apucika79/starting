@@ -7,6 +7,7 @@ import { FiokOldal } from '@/oldalak/FiokOldal';
 import { Fooldal } from '@/oldalak/Fooldal';
 import { InformaciosOldal } from '@/oldalak/InformaciosOldal';
 import { aktualisMunkamenet, recoveryAllapotAzUrlbol } from '@/szolgaltatasok/auth';
+import { navigalj } from '@/segedek/navigacio';
 import { supabase } from '@/szolgaltatasok/supabase';
 
 function App() {
@@ -74,7 +75,7 @@ function App() {
 
   if (utvonal === '/belepes') {
     if (munkamenet && !recoveryAllapot.aktiv) {
-      window.location.href = '/fiok';
+      navigalj('/fiok', { replace: true });
       return null;
     }
 
@@ -87,7 +88,7 @@ function App() {
 
   if (utvonal === '/fiok') {
     if (!munkamenet) {
-      window.location.href = '/belepes';
+      navigalj('/belepes', { replace: true });
       return null;
     }
 

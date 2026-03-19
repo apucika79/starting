@@ -2,6 +2,7 @@
 import type { ChangeEvent, FormEvent } from 'react';
 
 import { MarkaJelveny } from '@/komponensek/MarkaJelveny';
+import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
 import { alkalmazasKonfiguracio } from '@/segedek/konfiguracio';
 
 type Mezo = {
@@ -129,9 +130,9 @@ export function AuthKartya({
 
         <p className="mt-6 text-sm text-slate-300">
           {alsoLinkSzoveg}{' '}
-          <a className="font-semibold text-starting-primerVilagos transition hover:text-white" href={alsoLinkHref}>
+          <NavigaciosLink className="font-semibold text-starting-primerVilagos transition hover:text-white" href={alsoLinkHref}>
             {alsoLinkCimke}
-          </a>
+          </NavigaciosLink>
         </p>
       </section>
     </div>

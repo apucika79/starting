@@ -1,5 +1,6 @@
 // Ez a fájl a Starting nyilvános landing oldalát jeleníti meg, reszponzív hero, funkciók, előnyök és CTA blokkokkal.
 import { MarkaJelveny } from '@/komponensek/MarkaJelveny';
+import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
 import { SzakaszCim } from '@/komponensek/SzakaszCim';
 import { TartalomKartya } from '@/komponensek/TartalomKartya';
 import { alkalmazasKonfiguracio } from '@/segedek/konfiguracio';
@@ -54,9 +55,9 @@ export function Fooldal() {
             <a className="rounded-full px-4 py-2 transition hover:bg-white/10" href="#elonyok">
               Előnyök
             </a>
-            <a className="rounded-full bg-starting-primer px-5 py-2.5 font-medium text-white transition hover:bg-starting-primerVilagos" href="/belepes">
+            <NavigaciosLink className="rounded-full bg-starting-primer px-5 py-2.5 font-medium text-white transition hover:bg-starting-primerVilagos" href="/belepes">
               Belépés
-            </a>
+            </NavigaciosLink>
           </div>
         </header>
 
@@ -73,12 +74,12 @@ export function Fooldal() {
               és előkészíti a későbbi NAV / EFO / munkaügyi bővítéseket.
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <a
+              <NavigaciosLink
                 className="inline-flex items-center justify-center rounded-full bg-starting-primer px-6 py-3.5 text-base font-semibold text-white transition hover:bg-starting-primerVilagos"
                 href="/regisztracio"
               >
                 Indulás a Starting rendszerrel
-              </a>
+              </NavigaciosLink>
               <a
                 className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-white/10"
                 href={alkalmazasKonfiguracio.domain}
@@ -156,9 +157,9 @@ export function Fooldal() {
             </p>
           </div>
           <div className="mt-8 flex flex-col gap-4 sm:flex-row lg:mt-0 lg:flex-col">
-            <a className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100" href="/belepes">
+            <NavigaciosLink className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100" href="/belepes">
               Belépés előkészítve
-            </a>
+            </NavigaciosLink>
             <a className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10" href="mailto:hello@starting.hu">
               Kapcsolati hely előkészítve
             </a>
@@ -170,12 +171,12 @@ export function Fooldal() {
         <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Starting. Digitális munkakezdés weben és mobilon.</p>
           <div className="flex flex-wrap gap-4">
-            <a className="transition hover:text-white" href="/adatkezeles">
+            <NavigaciosLink className="transition hover:text-white" href="/adatkezeles">
               Adatkezelés
-            </a>
-            <a className="transition hover:text-white" href="/aszf">
+            </NavigaciosLink>
+            <NavigaciosLink className="transition hover:text-white" href="/aszf">
               ÁSZF
-            </a>
+            </NavigaciosLink>
             <a className="transition hover:text-white" href="https://starting.hu" target="_blank" rel="noreferrer">
               starting.hu
             </a>

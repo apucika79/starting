@@ -2,7 +2,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
+import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
 import { kilepes } from '@/szolgaltatasok/auth';
+import { navigalj } from '@/segedek/navigacio';
 import { profilBetoltese } from '@/szolgaltatasok/profil';
 import type { ProfilAdat } from '@/tipusok/profil';
 
@@ -89,7 +91,7 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
 
   const kezeliKilepest = async () => {
     await kilepes();
-    window.location.href = '/belepes';
+    navigalj('/belepes', { replace: true });
   };
 
   return (
@@ -104,15 +106,12 @@ export function FiokOldal({ session }: FiokOldalTulajdonsagok) {
               megmutatja, hogy a felhasználó mely szervezeti kontextussal érkezett meg a rendszerbe.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = '/';
-            }}
+          <NavigaciosLink
+            href="/"
             className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
           >
             Vissza a főoldalra
-          </button>
+          </NavigaciosLink>
         </div>
 
         <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">

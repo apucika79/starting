@@ -1,5 +1,6 @@
 // Ez a fájl egyszerű információs oldalakat jelenít meg a még előkészítés alatt álló jogi és tartalmi útvonalakhoz.
 import { MarkaJelveny } from '@/komponensek/MarkaJelveny';
+import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
 
 type InformaciosOldalTulajdonsagok = {
   felirat: string;
@@ -13,9 +14,9 @@ export function InformaciosOldal({ felirat, cim, leiras }: InformaciosOldalTulaj
       <div className="mx-auto max-w-5xl rounded-[2rem] border border-white/10 bg-white/5 px-6 py-8 shadow-kartya backdrop-blur sm:px-8 lg:px-10 lg:py-10">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-6 text-sm text-slate-300">
           <MarkaJelveny />
-          <a className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/">
+          <NavigaciosLink className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/">
             Vissza a főoldalra
-          </a>
+          </NavigaciosLink>
         </div>
 
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.35em] text-starting-primerVilagos">{felirat}</p>

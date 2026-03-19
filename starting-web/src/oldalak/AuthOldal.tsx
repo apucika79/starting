@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { AuthKartya } from '@/komponensek/AuthKartya';
+import { NavigaciosLink } from '@/komponensek/NavigaciosLink';
 import {
   belepesEmailJelszoval,
   jelszoFrissitese,
@@ -10,6 +11,7 @@ import {
   recoveryAllapotAzUrlbol,
   torliAuthVisszateroParametereket,
 } from '@/szolgaltatasok/auth';
+import { navigalj } from '@/segedek/navigacio';
 
 export type AuthOldalMod = 'belepes' | 'regisztracio';
 
@@ -224,7 +226,7 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
         setSikerUzenet('Az új jelszó mentve. Néhány másodpercen belül megnyitjuk a belső felületet.');
         setRecoveryMod(false);
         window.setTimeout(() => {
-          window.location.href = '/fiok';
+          navigalj('/fiok', { replace: true });
         }, 1200);
         return;
       } finally {
@@ -273,7 +275,7 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
         return;
       }
 
-      window.location.href = '/fiok';
+      navigalj('/fiok', { replace: true });
     } finally {
       setBetoltes(false);
     }
@@ -287,16 +289,16 @@ export function AuthOldal({ mod }: AuthOldalTulajdonsagok) {
     <main className="min-h-screen bg-halo px-6 py-6 text-white sm:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-white/5 px-6 py-8 shadow-kartya backdrop-blur sm:px-8 lg:px-10 lg:py-10">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-6 text-sm text-slate-300">
-          <a className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/">
+          <NavigaciosLink className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/">
             Vissza a főoldalra
-          </a>
+          </NavigaciosLink>
           <div className="flex flex-wrap gap-3">
-            <a className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/belepes">
+            <NavigaciosLink className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/belepes">
               Belépés
-            </a>
-            <a className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/regisztracio">
+            </NavigaciosLink>
+            <NavigaciosLink className="rounded-full px-4 py-2 transition hover:bg-white/10" href="/regisztracio">
               Regisztráció
-            </a>
+            </NavigaciosLink>
           </div>
         </div>
 
