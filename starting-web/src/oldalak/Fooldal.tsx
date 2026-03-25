@@ -99,6 +99,13 @@ const megvalositasTeruletek = [
   },
 ];
 
+const mintaTesztAdatok = [
+  '3 fiktív onboarding modul előkészítve',
+  'Minden modul egy kattintható ablakban nyílik meg',
+  'Videó helyett lépésenkénti szöveg + Tovább gomb',
+  'A végén automatikus Megtekintve státusz',
+];
+
 const keszenletiSzintek = [
   {
     terulet: 'Webes értékesítési / landing élmény',
@@ -199,12 +206,18 @@ export function Fooldal() {
               Röviden: gyorsabb indulás, kevesebb manuális adminisztráció és jobban átlátható napi működés. A Starting a webes vezetői
               felületet és a mobilos dolgozói használatot egy közös rendszerbe rendezi.
             </p>
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
               <NavigaciosLink
                 className="inline-flex min-h-14 items-center justify-center rounded-full bg-starting-primer px-7 py-4 text-base font-semibold text-white transition hover:bg-starting-primerVilagos"
+                href="/demo"
+              >
+                Interaktív demó megnyitása
+              </NavigaciosLink>
+              <NavigaciosLink
+                className="inline-flex min-h-14 items-center justify-center rounded-full border border-starting-keret bg-white px-7 py-4 text-base font-semibold text-starting-sotet transition hover:bg-slate-50"
                 href="/regisztracio"
               >
-                Kipróbálom a rendszert
+                Fiók létrehozása
               </NavigaciosLink>
               <a
                 className="inline-flex min-h-14 items-center justify-center rounded-full border border-starting-keret bg-white px-7 py-4 text-base font-semibold text-starting-sotet transition hover:bg-slate-50"
@@ -212,6 +225,13 @@ export function Fooldal() {
               >
                 Demo egyeztetés
               </a>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {mintaTesztAdatok.map((sor) => (
+                <p key={sor} className="rounded-2xl border border-starting-keret/70 bg-white/80 px-4 py-3 text-sm text-slate-600">
+                  • {sor}
+                </p>
+              ))}
             </div>
             <ul className="mt-8 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
               {designElvarasok.map((elvaras) => (

@@ -6,6 +6,7 @@ import { AuthOldal } from '@/oldalak/AuthOldal';
 import { FiokOldal } from '@/oldalak/FiokOldal';
 import { Fooldal } from '@/oldalak/Fooldal';
 import { InformaciosOldal } from '@/oldalak/InformaciosOldal';
+import { DemoOldal } from '@/oldalak/DemoOldal';
 import { VedettModulOldal } from '@/oldalak/VedettModulOldal';
 import { aktualisMunkamenet, recoveryAllapotAzUrlbol } from '@/szolgaltatasok/auth';
 import { navigalj } from '@/segedek/navigacio';
@@ -205,6 +206,10 @@ function App() {
     }
 
     return <VedettModulOldal aktivUtvonal={utvonal} session={munkamenet} {...vedettOldalTartalom} />;
+  }
+
+  if (utvonal === '/demo') {
+    return <DemoOldal />;
   }
 
   if (utvonal === '/adatkezeles') {
