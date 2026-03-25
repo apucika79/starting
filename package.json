@@ -12,6 +12,13 @@
     "indit:app": "npm run start --workspace starting-app",
     "epit:web": "npm run build --workspace starting-web",
     "ellenoriz:web": "npm run typecheck --workspace starting-web",
-    "ellenoriz:app": "npm run typecheck --workspace starting-app"
+    "ellenoriz:app": "npm run typecheck --workspace starting-app",
+    "dev": "npm run indit:web",
+    "start": "npm run indit:web",
+    "dev:web": "npm run dev --workspace starting-web",
+    "dev:all": "npm run dev --workspaces --if-present"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.52.5"
   }
 }
